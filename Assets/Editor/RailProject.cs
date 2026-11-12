@@ -20,7 +20,7 @@ public static class RailProject
         PlayerSettings.colorSpace=ColorSpace.Linear;
         var so=new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/ProjectSettings.asset")[0]);
         var input=so.FindProperty("activeInputHandler");if(input!=null){input.intValue=0;so.ApplyModifiedPropertiesWithoutUndo();}
-        foreach(string path in new[]{"Assets/Resources/Textures/RailBallast.png","Assets/Resources/Textures/RailBallastNormal.png"})
+        foreach(string path in System.IO.Directory.GetFiles("Assets/Resources/Textures","*.png"))
         {var ti=AssetImporter.GetAtPath(path) as TextureImporter;if(ti!=null){ti.maxTextureSize=1024;ti.textureCompression=TextureImporterCompression.Compressed;if(path.Contains("Normal"))ti.textureType=TextureImporterType.NormalMap;ti.SaveAndReimport();}}
         AssetDatabase.SaveAssets();Debug.Log("RAILWAY_SCENE_READY");
     }

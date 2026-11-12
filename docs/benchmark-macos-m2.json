@@ -1,12 +1,12 @@
 {
     "device": "Apple M2",
     "gpu": "Apple M2",
-    "state": "{\"mode\":\"Playing\",\"x\":15.0,\"y\":2.25,\"elapsed\":8.016630172729492,\"infection\":0.0,\"lives\":3,\"score\":100,\"checkpoint\":0,\"combo\":1,\"tickets\":1,\"grounded\":true}",
+    "state": "{\"mode\":\"Playing\",\"x\":15.0,\"y\":2.25,\"elapsed\":8.049962997436523,\"infection\":0.0,\"level\":0,\"lives\":3,\"score\":100,\"checkpoint\":0,\"combo\":1,\"tickets\":1,\"grounded\":true}",
     "width": 1600,
     "height": 900,
     "samples": 360,
-    "meanMs": 16.712995529174805,
-    "medianMs": 16.663585662841797,
-    "p95Ms": 17.614831924438477,
-    "maximumMs": 33.88241195678711
+    "meanMs": 16.759313583374023,
+    "medianMs": 16.66733169555664,
+    "p95Ms": 17.600744247436523,
+    "maximumMs": 33.21466827392578
 }

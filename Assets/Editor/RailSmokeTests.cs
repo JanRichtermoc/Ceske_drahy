@@ -14,11 +14,11 @@ public static class RailSmokeTests
     {
         var g=UnityEngine.Object.FindFirstObjectByType<RailGame>();
         Check(g!=null,"Run tests in Play Mode");
-        int savedBest=PlayerPrefs.GetInt("best",0);bool oldMuted=g.muted;var passed=new List<string>();
+        int[] savedBest={PlayerPrefs.GetInt("best",0),PlayerPrefs.GetInt("bestLevel1",0),PlayerPrefs.GetInt("bestLevel2",0)};bool oldMuted=g.muted;var passed=new List<string>();
         g.enabled=false;g.muted=true;
         try
         {
-            g.StartRun();Field("axis").SetValue(g,0f);Tick(g,4);
+            g.StartLevel(0);Field("axis").SetValue(g,0f);Tick(g,4);
             Check(g.grounded && Mathf.Abs(g.position.y-.12f)<.001f,"Initial platform landing");passed.Add("initial landing");
             g.Damage(3);int health=g.lives;g.Damage(3);
             Check(health==2 && g.lives==health,"Invulnerability must prevent repeated damage");passed.Add("damage + invulnerability");
@@ -65,12 +65,64 @@ public static class RailSmokeTests
             }
             Check(g.mode==RailGame.Mode.Won && visited.Count==13 && g.checkpoint==2,"Entire track must be reachable");
             Check(g.score>0,"Tickets must be collected");passed.Add("13 platforms + both checkpoints + finish + tickets");
+            g.FinishAction();
+            Check(g.LevelIndex==1 && g.mode==RailGame.Mode.Playing && g.lives==3,"Finishing Olomouc advances to the depot");
+            passed.Add("campaign advancement");
+
+            Field("axis").SetValue(g,0f);
+            g.position=new Vector2(42,3.5f);
+            g.simTime=3.9f;
+            Tick(g,1);
+            Check(g.lives==2,"An active steam vent must damage the player");
+            passed.Add("steam hazard");
+
+            for(int level=1;level<CeskeDrahy.RailLevel.All.Length;level++)
+            {
+                g.StartLevel(level);
+                Check(g.lives==(level==2?2:3),"Advanced route starting health");
+                Check(TraverseAdvanced(g),"Every roof and checkpoint must be reachable on route "+level);
+                passed.Add("advanced route "+level);
+            }
             string result="PASS ("+passed.Count+"): "+string.Join("; ",passed);Debug.Log(result);return result;
         }
         finally
         {
-            PlayerPrefs.SetInt("best",savedBest);PlayerPrefs.Save();g.muted=oldMuted;
-            g.StartRun();g.Menu();g.enabled=true;g.hero.gameObject.SetActive(true);Field("axis").SetValue(g,0f);
+            PlayerPrefs.SetInt("best",savedBest[0]);PlayerPrefs.SetInt("bestLevel1",savedBest[1]);PlayerPrefs.SetInt("bestLevel2",savedBest[2]);PlayerPrefs.Save();g.muted=oldMuted;
+            g.StartLevel(0);g.Menu();g.enabled=true;g.hero.gameObject.SetActive(true);Field("axis").SetValue(g,0f);
         }
     }
+    static bool TraverseAdvanced(RailGame game)
+    {
+        var move=Field("axis");
+        var jump=Field("jumpBuffer");
+        var visited=new HashSet<int>();
+        int last=0;
+        for(int frame=0;frame<120*75 && game.mode==RailGame.Mode.Playing;frame++)
+        {
+            game.invulnerability=999; // Check traversal independently of enemy attack timing.
+            if(game.grounded)
+            {
+                int p=game.world.platforms.FindIndex(v=>game.position.x>=v.Left-.25f &&
+                    game.position.x<=v.Right+.25f && Mathf.Abs(game.position.y-v.top)<.1f);
+                if(p>=0){last=p;visited.Add(p);}
+            }
+            float input=1;
+            if(last<game.world.platforms.Count-1)
+            {
+                var start=game.world.platforms[last];
+                var target=game.world.platforms[last+1];
+                if(game.grounded && game.position.x>start.Right-1)jump.SetValue(game,.14f);
+                if(!game.grounded && game.chaos.airJumpReady && game.velocity.y<.7f &&
+                    game.position.x<target.Left+1.3f && game.position.x>start.Right-1.35f)
+                    jump.SetValue(game,.14f);
+                if(!game.grounded && game.position.x>target.x && game.position.y>target.top+.2f)input=0;
+            }
+            move.SetValue(game,input);
+            int lives=game.lives;
+            Tick(game,1);
+            if(game.lives<lives)return false;
+        }
+        return game.mode==RailGame.Mode.Won && game.checkpoint==2 && visited.Count==game.world.platforms.Count;
+    }
+
 }

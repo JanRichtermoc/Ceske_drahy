@@ -45,7 +45,7 @@ namespace CeskeDrahy
             }
             Hud();
             if(game.mode==RailGame.Mode.Paused)Overlay("CHVÍLI POSTŮJ.","Vlak počká. Dej si pauzu.",true);
-            if(game.mode==RailGame.Mode.Won)Overlay("TY JSI TO STIHL!","Vlak má zpoždění. Ty už ne.",false);
+            if(game.mode==RailGame.Mode.Won)Overlay("TY JSI TO STIHL!",game.HasNextLevel?RailLevel.All[game.LevelIndex+1].Brief:"Vlak má zpoždění. Ty už ne.",false);
             if(game.mode==RailGame.Mode.Lost)Overlay("UJEL TI VLAK.","Holubi si tě napsali do jízdního řádu.",false);
         }
         void MainMenu()
@@ -55,12 +55,18 @@ namespace CeskeDrahy
             Label(54,126,550,30,"POSLEDNÍ SPOJ",eyebrow);
             Label(48,183,610,220,"ČESKÉ\nDRÁHY",title);
             Rect(54,409,72,5,amber);Label(54,441,555,40,"OLOMOUCKÝ CHAOS",number);
-            Label(54,501,530,94,"David má jízdenku. Nádraží má jiné plány. Odraz se od kufru, proskoč mezi vagony a nenech se píchnout.",body);
-            if(Button(54,626,540,"NA NÁSTUPIŠTĚ                         →")){settings=false;game.StartRun();}
+            Label(54,501,530,94,"CJ má jízdenku. Nádraží má jiné plány. Přeskoč střechy vagonů a dostaň se přes celé seřadiště.",body);
+            if(Button(54,626,540,"HRÁT OD ZAČÁTKU                      →")){settings=false;game.StartLevel(0);}
             if(Button(54,698,260,"NASTAVENÍ",false))settings=!settings;
             Label(338,716,270,30,"ENTER  /  rychlý start",small);
-            Rect(1050,645,492,143,ink);Label(1080,667,430,28,"HLÁŠENÍ PRO CESTUJÍCÍ",eyebrow);
-            Label(1080,708,430,58,"Vlak má zpoždění. Holubi bohužel ne.",body);
+            Rect(1020,543,522,272,ink);
+            Label(1048,562,460,30,"VÝBĚR TRATI",eyebrow);
+            for(int i=0;i<RailLevel.All.Length;i++)
+            {
+                string difficulty=i==0?"START":i==1?"TĚŽKÁ":"EXPERT";
+                if(Button(1048,600+i*67,466,RailLevel.All[i].Name+"  /  "+difficulty,false))
+                {settings=false;game.StartLevel(i);}
+            }
             Rect(0,834,1600,66,ink);Label(48,856,1050,35,"A D / ← →  POHYB     MEZERNÍK  DVOJSKOK     SHIFT  ÚHYB     ESC  PAUZA",small);
             Label(1230,856,350,30,"OSOBNÍ FANOUŠKOVSKÁ HRA",small);
             if(settings)Settings(720,135);
@@ -124,8 +130,10 @@ namespace CeskeDrahy
             Label(474,231,660,28,paused?"PAUZA  /  NÁSTUPIŠTĚ JE TVOJE":"KONEC JÍZDY  /  "+game.Zone,eyebrow);
             Label(472,292,670,72,heading,display);Label(474,379,650,60,description,body);
             Label(474,456,650,45,"BODY  "+game.score+"     KOMBO ×"+game.chaos.bestCombo+"     ČAS  "+game.elapsed.ToString("0.0")+" s",body);
-            Label(474,498,650,30,"REKORD  "+PlayerPrefs.GetInt("best",0)+"     ODRAZY  "+game.chaos.stomps,small);
-            if(Button(474,542,652,paused?"POKRAČOVAT                              →":"ZNOVU NA TRAŤ                        →")){if(paused)game.TogglePause();else game.StartRun();}
+            Label(474,498,650,30,"REKORD  "+PlayerPrefs.GetInt(game.BestKey,0)+"     ODRAZY  "+game.chaos.stomps,small);
+            bool next=game.mode==RailGame.Mode.Won && game.HasNextLevel;
+            string action=paused?"POKRAČOVAT":next?"DALŠÍ TRAŤ  /  "+RailLevel.All[game.LevelIndex+1].Name:"ZNOVU NA TRAŤ";
+            if(Button(474,542,652,action+"   →")){if(paused)game.TogglePause();else game.FinishAction();}
             if(Button(474,614,316,"HLAVNÍ MENU",false)){settings=false;game.Menu();}
             if(Button(810,614,316,"NASTAVENÍ",false))settings=!settings;
             if(settings)Settings(430,205);

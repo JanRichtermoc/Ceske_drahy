@@ -21,6 +21,65 @@ namespace CeskeDrahy
         public readonly List<Transform> inspectors = new List<Transform>();
         public readonly List<Transform> signals = new List<Transform>();
         public Transform root;
+        public RailLevel Level { get; private set; }
+        public int LevelIndex { get; private set; }
+        readonly List<Mesh> generatedMeshes = new List<Mesh>();
+        readonly List<SteamVent> vents = new List<SteamVent>();
+        Material skybox;
+        sealed class SteamVent
+        {
+            public Platform Platform;
+            public Transform Warning, Plume;
+            public float Phase;
+            public bool Active;
+        }
+        public void Dispose()
+        {
+            root.gameObject.SetActive(false);
+            Object.Destroy(root.gameObject);
+            foreach(var material in mats.Values)Object.Destroy(material);
+            foreach(var mesh in generatedMeshes)Object.Destroy(mesh);
+            Object.Destroy(skybox);
+        }
+        public void AttachMesh(string name,Transform parent,Mesh mesh,Material material)
+        {
+            var visual=Group(name,Vector3.zero,parent);
+            visual.gameObject.AddComponent<MeshFilter>().sharedMesh=mesh;
+            visual.gameObject.AddComponent<MeshRenderer>().sharedMaterial=material;
+            generatedMeshes.Add(mesh);
+        }
+        public Material Textured(string name,string source,Vector2 tiling,float bump)
+        {
+            var material=Mat(name,"#FFFFFF",smooth:.21f);
+            material.mainTexture=Resources.Load<Texture2D>("Textures/"+source);
+            material.mainTextureScale=tiling;
+            material.SetTexture("_BumpMap",Resources.Load<Texture2D>("Textures/"+source+"Normal"));
+            material.SetFloat("_BumpScale",bump);
+            material.EnableKeyword("_NORMALMAP");
+            return material;
+        }
+        public Platform PlatformAt(float x)=>platforms.Find(v=>x>=v.x-v.width*.5f && x<=v.x+v.width*.5f);
+        Material SoftSprite(string name,Color tint,bool cloud)
+        {
+            if(mats.TryGetValue(name,out var existing))return existing;
+            var material=new Material(Resources.Load<Shader>("SoftSprite")){name=name,color=tint};
+            material.SetFloat("_Cloud",cloud?1:0);
+            mats.Add(name,material);
+            return material;
+        }
+        public float Surface(float x,float fallback=1)
+        {
+            var p=PlatformAt(x);
+            return p!=null?p.top:fallback;
+        }
+        public bool SteamHit(Vector2 position)
+        {
+            foreach(var vent in vents)
+                if(vent.Active && Mathf.Abs(position.x-(vent.Platform.x+vent.Platform.offset))<.67f &&
+                    position.y>=vent.Platform.top-.3f && position.y<vent.Platform.top+2.2f)return true;
+            return false;
+        }
+
         public Material navy, blue, cream, steel, dark, gold, skin, rust, glass, green;
         readonly Dictionary<string, Material> mats = new Dictionary<string, Material>();
 
@@ -59,7 +118,7 @@ namespace CeskeDrahy
             {float a=k/11f*Mathf.PI;vertices[side*12+k]=new Vector3((side-.5f)*width,Mathf.Sin(a)*.21f,Mathf.Cos(a)*depth/2);uv[side*12+k]=new Vector2(side,k/11f);}
             for(int k=0;k<11;k++){indices.AddRange(new[]{k,k+12,k+1,k+1,k+12,k+13});}
             mesh.vertices=vertices;mesh.uv=uv;mesh.triangles=indices.ToArray();mesh.RecalculateNormals();mesh.RecalculateBounds();
-            t.gameObject.AddComponent<MeshFilter>().sharedMesh=mesh;t.gameObject.AddComponent<MeshRenderer>().sharedMaterial=material;return t;
+            t.gameObject.AddComponent<MeshFilter>().sharedMesh=mesh;t.gameObject.AddComponent<MeshRenderer>().sharedMaterial=material;generatedMeshes.Add(mesh);return t;
         }
         public void Sign(string text, Vector3 pos, float size, Transform parent = null, Color? color = null)
         {
@@ -67,8 +126,9 @@ namespace CeskeDrahy
             m.text = text; m.fontSize = 64; m.characterSize = size; m.anchor = TextAnchor.MiddleCenter;
             m.color = color ?? new Color(.91f,.94f,.9f); m.fontStyle = FontStyle.Bold;
         }
-        public void Build()
+        public void Build(int levelIndex = 0)
         {
+            LevelIndex=levelIndex;Level=RailLevel.All[levelIndex];
             root = new GameObject("Railway world").transform;
             navy=Mat("Midnight blue","#142C40"); blue=Mat("Rail blue","#226896",.35f,.52f);
             cream=Mat("Ivory enamel","#E3E0CF",.16f,.4f); steel=Mat("Brushed steel","#83999F",.65f,.6f);
@@ -79,7 +139,7 @@ namespace CeskeDrahy
             ballast.mainTexture=Resources.Load<Texture2D>("Textures/RailBallast"); ballast.mainTextureScale=new Vector2(40,2);
             ballast.SetTexture("_BumpMap",Resources.Load<Texture2D>("Textures/RailBallastNormal"));ballast.SetFloat("_BumpScale",.35f);ballast.EnableKeyword("_NORMALMAP");
             Box("Ballast bed",new Vector3(92,-1.2f,3),new Vector3(220,.4f,14),ballast);
-            Box("Foreground ground",new Vector3(92,-1.65f,0),new Vector3(220,.5f,45),Mat("Earth","#55564C"));
+            Box("Foreground ground",new Vector3(92,-1.65f,0),new Vector3(220,.5f,45),Textured("Rail forecourt paving","CrackedConcrete",new Vector2(45,9),.24f));
             // Parallel tracks, with shared meshes and materials.
             for(int track=0;track<3;track++)
             {
@@ -87,13 +147,15 @@ namespace CeskeDrahy
                 for(int side=-1;side<=1;side+=2) Box("Rail",new Vector3(92,-.77f,z+side*.8f),new Vector3(220,.13f,.09f),steel);
                 for(int i=-8;i<202;i+=2) Box("Sleeper",new Vector3(i,-.91f,z),new Vector3(.25f,.16f,2.4f),dark);
             }
-            PlatformStation(0,16,.12f,"OLOMOUC  /  HLAVNÍ NÁDRAŽÍ");
-            Train(15,10,2.25f,0); Train(28,10,2.6f,1); Train(42,11,2.3f,2);
-            PlatformStation(56,12,.8f,"01  /  PODCHOD");
-            Train(70,10,2.7f,0); Train(84,10,3.1f,1,.7f); Train(98,10,2.65f,2);
-            PlatformStation(112,12,1,"02  /  NÁSTUPIŠTĚ 5");
-            Train(126,10,3,1); Train(140,10,3.5f,0,.6f); Train(154,10,2.8f,2);
-            PlatformStation(170,18,1.2f,"CÍL  /  POSLEDNÍ SPOJ");
+            string[] stationNames={Level.Name,levelIndex==0?"01 / PODCHOD":"01 / SERVISNÍ LÁVKA",levelIndex==0?"02 / NÁSTUPIŠTĚ 5":"02 / SIGNÁL VOLNO","CÍL / POSLEDNÍ SPOJ"};
+            for(int i=0;i<Level.Platforms.Length;i++)
+            {
+                Vector4 p=Level.Platforms[i];
+                if(i%4==0)PlatformStation(p.x,p.y,p.z,stationNames[i/4]);
+                else if(levelIndex>0 && (p.z>3.25f || i%3!=1))Cargo(p.x,p.y,p.z,p.w,i);
+                else Train(p.x,p.y,p.z,(i-1)%4==0?0:(i-1)%4==1?1:2,p.w);
+            }
+            foreach(int index in Level.Vents)CreateVent(platforms[index],index);
             foreach(var p in platforms)
             {
                 for(float x=p.x-p.width/2+2;x<p.x+p.width/2-1;x+=2.5f)
@@ -103,43 +165,126 @@ namespace CeskeDrahy
                     tickets.Add(t);ticketOrigins.Add(new Vector2(x,p.top+1.25f));
                 }
             }
-            foreach(float x in new[]{25f,39f,76f,91f,132f,148f,159f})
+            foreach(float x in Level.Birds)
             {
-                var b=Group("Holub",new Vector3(x,5.2f,0));
+                float height=levelIndex==0?5.2f:Surface(x,3.6f)+1.95f;
+                var b=Group("Holub",new Vector3(x,height,0));
                 Box("Body",Vector3.zero,new Vector3(.55f,.3f,.33f),steel,b,PrimitiveType.Sphere);
                 Box("Head",new Vector3(-.3f,.13f,0),Vector3.one*.24f,navy,b,PrimitiveType.Sphere);
                 Box("Beak",new Vector3(-.45f,.12f,0),new Vector3(.17f,.07f,.1f),gold,b);
                 Box("Left wing",new Vector3(0,.08f,-.3f),new Vector3(.55f,.065f,.58f),dark,b);
                 Box("Right wing",new Vector3(0,.08f,.3f),new Vector3(.55f,.065f,.58f),dark,b);
-                birds.Add(b);birdOrigins.Add(new Vector2(x,5.2f));
+                birds.Add(b);birdOrigins.Add(new Vector2(x,height));
             }
-            foreach(float x in new[]{32f,88f,144f})
+            foreach(float x in Level.Inspectors)
             {
-                var p=platforms.Find(v=>x>=v.Left && x<=v.Right);
-                var man=Person("Revizor",new Vector3(x,p.top,0),true);
+                var man=Person("Revizor",new Vector3(x,Surface(x),0),true);
+                var roof=PlatformAt(x);if(roof!=null)man.SetParent(roof.root,true);
                 var warn=Box("Attack warning",new Vector3(0,2.3f,0),Vector3.one*.2f,gold,man,PrimitiveType.Sphere);
                 inspectors.Add(man);signals.Add(warn);
             }
-            Background();
-            OlomoucStation.Build(this);
-            RenderSettings.skybox=new Material(Resources.Load<Shader>("EveningSky"));
-            Box("Finish gate",new Vector3(175,3.5f,1),new Vector3(.17f,5, .2f),gold);
-            Box("Finish flag",new Vector3(176,5.5f,1),new Vector3(2,1,.08f),blue);
-            Sign("CÍL",new Vector3(176,5.5f,.93f),.16f);
-            var sun=new GameObject("Evening sunlight").AddComponent<Light>();sun.type=LightType.Directional;
-            sun.transform.rotation=Quaternion.Euler(38,-35,0);sun.color=new Color(1,.8f,.57f);sun.intensity=1.15f;
-            sun.shadows=LightShadows.Soft;sun.shadowStrength=.65f;
+            if(levelIndex==0){Background();OlomoucStation.Build(this);}
+            else IndustrialBackdrop(levelIndex==2);
+            float finish=Level.Finish;
+            float finishY=Level.Platforms[12].z;
+            Box("Finish gate",new Vector3(finish+1,finishY+2.3f,1),new Vector3(.17f,5,.2f),gold);
+            Box("Finish flag",new Vector3(finish+2,finishY+4.3f,1),new Vector3(2,1,.08f),blue);
+            Sign("CÍL",new Vector3(finish+2,finishY+4.3f,.93f),.16f);
+            SetupLight(levelIndex);
+        }
+        void SetupLight(int level)
+        {
+            bool night=level==2;
+            skybox=new Material(Resources.Load<Shader>("EveningSky"));
+            skybox.SetVector("_Horizon",night?new Vector4(.13f,.22f,.34f,1):level==1?new Vector4(.87f,.45f,.24f,1):new Vector4(.78f,.68f,.51f,1));
+            skybox.SetVector("_Zenith",night?new Vector4(.018f,.045f,.13f,1):new Vector4(.24f,.44f,.56f,1));
+            skybox.SetFloat("_SunStrength",night?.09f:level==1?1.2f:1);
+            RenderSettings.skybox=skybox;
+            var sun=Group("Main light",Vector3.zero).gameObject.AddComponent<Light>();
+            sun.type=LightType.Directional;
+            sun.transform.rotation=Quaternion.Euler(night?43:32,-35,0);
+            sun.color=night?new Color(.65f,.8f,1):new Color(1,.82f,.64f);
+            sun.intensity=night?.88f:1.2f;
+            sun.shadows=LightShadows.Soft;sun.shadowStrength=.72f;
+            var fill=Group("Roof rim light",Vector3.zero).gameObject.AddComponent<Light>();
+            fill.type=LightType.Directional;fill.shadows=LightShadows.None;
+            fill.transform.rotation=Quaternion.Euler(26,145,0);
+            fill.color=night?new Color(1,.56f,.34f):new Color(.61f,.79f,1);
+            fill.intensity=night?.53f:.25f;
             RenderSettings.ambientMode=AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor=new Color(.48f,.64f,.72f);RenderSettings.ambientEquatorColor=new Color(.47f,.51f,.52f);
+            RenderSettings.ambientSkyColor=night?new Color(.28f,.36f,.51f):new Color(.53f,.62f,.72f);
+            RenderSettings.ambientEquatorColor=night?new Color(.25f,.3f,.42f):new Color(.47f,.51f,.52f);
             RenderSettings.ambientGroundColor=new Color(.25f,.28f,.3f);
-            RenderSettings.fog=true;RenderSettings.fogColor=new Color(.63f,.71f,.73f);RenderSettings.fogMode=FogMode.Linear;
-            RenderSettings.fogStartDistance=30;RenderSettings.fogEndDistance=105;
-            QualitySettings.shadowDistance=38;QualitySettings.shadowResolution=ShadowResolution.Medium;
+            RenderSettings.fog=true;RenderSettings.fogColor=night?new Color(.23f,.32f,.48f):new Color(.66f,.69f,.72f);RenderSettings.fogMode=FogMode.Linear;
+            RenderSettings.fogStartDistance=28;RenderSettings.fogEndDistance=night?76:105;
+            QualitySettings.shadowDistance=40;QualitySettings.shadowResolution=ShadowResolution.Medium;
+        }
+        void Cargo(float x,float width,float top,float travel,int index)
+        {
+            var wagon=Group("Nákladní vagon",new Vector3(x,0,0));
+            var paint=Mat("Cargo paint "+index%3,index%3==0?"#316876":index%3==1?"#934D3F":"#506847",.28f,.4f);
+            Box("Container",new Vector3(0,top-1.03f,0),new Vector3(width,2,2.34f),paint,wagon);
+            Box("Roof rail",new Vector3(0,top-.045f,-1.18f),new Vector3(width,.09f,.07f),steel,wagon);
+            for(float i=-width*.5f+.25f;i<width*.5f;i+=.48f)
+                Box("Corrugated rib",new Vector3(i,top-.99f,-1.18f),new Vector3(.11f,1.8f,.085f),paint,wagon);
+            Box("Safety strip",new Vector3(0,top-1.92f,-1.23f),new Vector3(width,.07f,.032f),gold,wagon);
+            Sign("ČD CARGO  /  "+(420+index),new Vector3(0,top-1,-1.26f),.043f,wagon);
+            Box("Frame",new Vector3(0,top-2.13f,0),new Vector3(width,.28f,2.15f),dark,wagon);
+            for(int side=-1;side<=1;side+=2)
+            {
+                var wheel=Box("Bogie wheel",new Vector3(side*width*.3f,top-2.42f,-.94f),new Vector3(.64f,.12f,.64f),dark,wagon,PrimitiveType.Cylinder);
+                wheel.localRotation=Quaternion.Euler(90,0,0);
+            }
+            if(top>3.25f)
+            {
+                float baseY=top-2.86f;
+                Box("Raised track bed",new Vector3(x,baseY,0),new Vector3(width+travel*2,.21f,2.8f),steel);
+                for(int side=-1;side<=1;side+=2)
+                    Box("Raised track pillar",new Vector3(x+side*width*.3f,baseY*.5f-.3f,0),new Vector3(.62f,baseY+.6f,1.7f),Mat("Track pier","#657480"));
+            }
+            platforms.Add(new Platform{x=x,width=width,top=top,root=wagon,amplitude=travel,phase=x});
+        }
+        void CreateVent(Platform p,int phase)
+        {
+            Box("Steam grate",new Vector3(0,p.top+.035f,0),new Vector3(1.25f,.07f,1.16f),dark,p.root);
+            for(int i=-2;i<=2;i++)Box("Grate slot",new Vector3(i*.2f,p.top+.075f,0),new Vector3(.08f,.015f,.8f),gold,p.root);
+            var warning=Box("Amber steam warning",new Vector3(0,p.top+.3f,-.64f),new Vector3(.29f,.21f,.14f),gold,p.root,PrimitiveType.Sphere);
+            var plume=Group("Steam burst",new Vector3(0,p.top,0),p.root);
+            var vapor=SoftSprite("Steam mist",new Color(.77f,.89f,1,.72f),true);
+            for(int i=0;i<5;i++)
+            {
+                float width=.88f+i*.18f;
+                Box("Steam mist",new Vector3(Mathf.Sin(i*4)*.22f,.45f+i*.38f,-.3f+i*.013f),
+                    new Vector3(width,.99f,1),vapor,plume,PrimitiveType.Quad);
+            }
+            plume.gameObject.SetActive(false);
+            vents.Add(new SteamVent{Platform=p,Warning=warning,Plume=plume,Phase=phase*.68f});
+        }
+        void IndustrialBackdrop(bool night)
+        {
+            var brick=Textured("Depot scanned masonry","StationBrick",new Vector2(6,2.1f),.65f);
+            var warm=Mat("Floodlit window","#FFBB66");
+            var glow=SoftSprite("Floodlight glow",new Color(1,.59f,.25f,night?.40f:.17f),false);
+            for(int x=10;x<185;x+=32)
+            {
+                float h=night?9:11;
+                Box("Maintenance hall",new Vector3(x,h/2-1,15),new Vector3(26,h,6),brick);
+                Box("Hall roof",new Vector3(x,h-1,15),new Vector3(27,.36f,7),dark);
+                for(int i=-9;i<=9;i+=6)
+                {
+                    Box("Industrial window",new Vector3(x+i,h-3.7f,11.93f),new Vector3(4,2.5f,.08f),night?warm:glass);
+                    for(int j=-1;j<=1;j++)Box("Steel glazing bars",new Vector3(x+i+j,h-3.7f,11.86f),new Vector3(.065f,2.5f,.08f),dark);
+                }
+                Box("Portal gantry",new Vector3(x+12,5,5),new Vector3(.3f,11,.32f),steel);
+                Box("Crane bridge",new Vector3(x+6,10.4f,5),new Vector3(12,.45f,.36f),gold);
+                Box("Floodlight",new Vector3(x+11.5f,9.4f,4.7f),new Vector3(.85f,.32f,.5f),warm);
+                Box("Diffused floodlight",new Vector3(x+11.5f,9.35f,4.42f),new Vector3(3.9f,3,1),glow,null,PrimitiveType.Quad);
+            }
         }
         void PlatformStation(float x,float width,float top,string label)
         {
             var g=Group("Nástupiště",new Vector3(x,0,0));
-            Box("Concrete",new Vector3(0,top-.55f,0),new Vector3(width,1.1f,3.1f),Mat("Concrete","#9EA99F"),g);
+            Box("Concrete",new Vector3(0,top-.55f,0),new Vector3(width,1.1f,3.1f),Textured("Concrete platform scan","CrackedConcrete",new Vector2(4,.8f),.32f),g);
             Box("Yellow edge",new Vector3(0,top+.015f,-1.4f),new Vector3(width,.04f,.12f),gold,g);
             for(float i=-width/2;i<width/2;i+=.8f)Box("Edge marking",new Vector3(i,top-.16f,-1.57f),new Vector3(.4f,.15f,.035f),cream,g);
             Box("Station sign",new Vector3(0,top+3.6f,2),new Vector3(7,.85f,.16f),navy,g);
@@ -269,6 +414,14 @@ namespace CeskeDrahy
         }
         public void Tick(float time,float dt)
         {
+            foreach(var vent in vents)
+            {
+                float phase=(time+vent.Phase)%(LevelIndex==2?3.55f:4.45f);
+                vent.Active=phase>=1.15f && phase<2.13f;
+                vent.Warning.gameObject.SetActive(phase<1.15f && Mathf.Sin(time*26)>0);
+                vent.Plume.gameObject.SetActive(vent.Active);
+                if(vent.Active)vent.Plume.localScale=new Vector3(1,.65f+.35f*Mathf.Sin((phase-1.15f)*3.2f),1);
+            }
             foreach(var p in platforms){float v=Mathf.Sin(time*.8f+p.phase)*p.amplitude;p.delta=v-p.offset;p.offset=v;p.root.position=new Vector3(p.x+v,0,0);}
             for(int i=0;i<tickets.Count;i++)if(tickets[i].gameObject.activeSelf){tickets[i].position=new Vector3(ticketOrigins[i].x,ticketOrigins[i].y+Mathf.Sin(time*3+i)*.12f,0);tickets[i].rotation=Quaternion.Euler(0,time*90,8);}
             for(int i=0;i<birds.Count;i++)

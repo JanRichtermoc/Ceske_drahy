@@ -28,11 +28,12 @@ namespace CeskeDrahy
         {
             game=owner;world=owner.world;
             for(int i=0;i<pops.Length;i++)pops[i]=new Pop();
-            float[] xs={44,76,100,130,158};
+            float[] xs=world.Level.Street;
             for(int i=0;i<xs.Length;i++)
             {
                 float y=Surface(xs[i]);
                 var man=world.Person("Bezdomovec / fiktivní podchodový alchymista "+i,new Vector3(xs[i],y,0),false,true);
+                var roof=world.PlatformAt(xs[i]);if(roof!=null)man.SetParent(roof.root,true);
                 streetEnemies[i]=man;
                 var syringe=Syringe("Obří injekce",man);syringe.localPosition=new Vector3(-.6f,1.1f,-.12f);syringe.localScale=Vector3.one*1.4f;
                 warning[i]=world.Box("Pozor na injekci",new Vector3(0,2.4f,0),Vector3.one*.3f,world.Mat("Lime serum","#B4EB43"),man,PrimitiveType.Sphere);
@@ -47,7 +48,7 @@ namespace CeskeDrahy
                 }
             }
             for(int i=0;i<needles.Length;i++){needles[i]=Syringe("Létající injekce");needles[i].gameObject.SetActive(false);}
-            float[] heals={52,94,110,167};
+            float[] heals=world.Level.Medkits;
             for(int i=0;i<heals.Length;i++)
             {
                 var root=world.Group("Lékárnička",new Vector3(heals[i],Surface(heals[i])+1.25f,0));
@@ -56,7 +57,7 @@ namespace CeskeDrahy
                 world.Box("Cross crossbar",new Vector3(0,0,-.15f),new Vector3(.32f,.12f,.025f),world.green,root);
                 medkits[i]=root;medkitPositions[i]=root.position;
             }
-            float[] snacks={18,81,138};
+            float[] snacks=world.Level.Snacks;
             for(int i=0;i<snacks.Length;i++)
             {
                 var root=world.Group("Tvarůžkové turbo",new Vector3(snacks[i],Surface(snacks[i])+1.7f,0));
@@ -65,7 +66,7 @@ namespace CeskeDrahy
                 world.Box("Cheese hole",new Vector3(-.13f,-.1f,-.18f),Vector3.one*.09f,world.rust,root,PrimitiveType.Sphere);
                 cheeses[i]=root;cheesePositions[i]=root.position;
             }
-            float[] bounce={5.5f,57.5f,113};
+            float[] bounce=world.Level.Springs;
             for(int i=0;i<bounce.Length;i++)
             {
                 var root=world.Group("Pružící kufr",new Vector3(bounce[i],Surface(bounce[i]),0));
@@ -77,7 +78,7 @@ namespace CeskeDrahy
             for(int i=0;i<aura.Length;i++)
             {aura[i]=world.Box("Cartoon infection bubble",Vector3.zero,Vector3.one*.12f,world.Mat("Lime serum","#B4EB43"),null,PrimitiveType.Sphere);aura[i].gameObject.SetActive(false);}
         }
-        float Surface(float x){var p=world.platforms.Find(v=>x>=v.Left&&x<=v.Right);return p!=null?p.top:1;}
+        float Surface(float x)=>world.Surface(x);
         Transform Syringe(string name,Transform parent=null)
         {
             var root=world.Group(name,Vector3.zero,parent);

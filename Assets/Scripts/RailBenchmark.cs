@@ -15,7 +15,16 @@ namespace CeskeDrahy
             var args=Environment.GetCommandLineArgs();int index=Array.IndexOf(args,"-rail-benchmark");
             if(index<0 || index+1>=args.Length){Destroy(this);return;}
             output=Path.GetFullPath(args[index+1]);Directory.CreateDirectory(output);
-            game=GetComponent<RailGame>();game.StartRun();game.InputOverride=0;game.position=new Vector2(15,2.25f);game.muted=false;
+            game=GetComponent<RailGame>();
+            int level=0;
+            int levelArgument=Array.IndexOf(args,"-rail-level");
+            if(levelArgument>=0 && levelArgument+1<args.Length && int.TryParse(args[levelArgument+1],out int requested))
+                level=Mathf.Clamp(requested-1,0,RailLevel.All.Length-1);
+            game.StartLevel(level);
+            game.InputOverride=0;
+            var platform=game.world.platforms[1];
+            game.position=new Vector2(platform.x,platform.top);
+            game.muted=false;
         }
         void Update()
         {

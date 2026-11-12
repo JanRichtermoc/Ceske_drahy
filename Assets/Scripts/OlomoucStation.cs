@@ -7,7 +7,7 @@ namespace CeskeDrahy
         public static void Build(RailWorld w)
         {
             var root=w.Group("Olomouc hlavní nádraží / stylizovaná výpravní budova",new Vector3(13,0,14));
-            var brick=w.Mat("Station brick","#995747");var stone=w.Mat("Station limestone","#D6C4A3");
+            var brick=w.Textured("Station brick","StationBrick",new Vector2(7,3.2f),.67f);var stone=w.Mat("Station limestone","#D6C4A3");
             var frame=w.Mat("Station bronze","#38515A",.5f,.4f);
             w.Box("Entrance hall",new Vector3(0,5.2f,0),new Vector3(24,12,5),brick,root);
             w.Box("West wing",new Vector3(-20,2.5f,1),new Vector3(16,6.5f,5),stone,root);
@@ -22,7 +22,6 @@ namespace CeskeDrahy
                 w.Box("Entrance doors",new Vector3(i,1.25f,-2.6f),new Vector3(2.3f,3.3f,.1f),w.glass,root);
                 w.Box("Door handles",new Vector3(i,1.3f,-2.7f),new Vector3(.1f,.7f,.1f),w.steel,root);
             }
-            for(float y=4;y<11;y+=.42f)w.Box("Brick mortar",new Vector3(0,y,-2.51f),new Vector3(24,.025f,.025f),w.rust,root);
             w.Box("Entrance canopy",new Vector3(0,3.2f,-4),new Vector3(29,.32f,5.4f),stone,root);
             w.Box("Name panel",new Vector3(0,3.8f,-5.9f),new Vector3(17,1,.15f),w.navy,root);
             w.Sign("OLOMOUC  hl. n.",new Vector3(0,3.8f,-6.01f),.13f,root);
