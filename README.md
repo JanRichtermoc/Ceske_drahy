@@ -27,6 +27,8 @@ Scéna obsahuje herní bootstrap; prostředí se vytváří při spuštění. P�
 
 Sbírej jízdenky, doskoč na střechy vlaků a dojdi k cílové vlajce. Žlutá kontrolka nad revizorem předchází hodu brašnou. Po zásahu následuje krátká nezranitelnost. Pád stojí jeden ze tří životů. Checkpointy jsou na nástupištích ve Vršovicích a depu. Ztráta zaostření okna hru pozastaví.
 
+![Hra v samostatné macOS aplikaci](docs/gameplay.png)
+
 ## Implementace a výkon
 
 - Kinematický pohyb ve 120Hz pevném kroku s detekcí přechodu přes střechu, tolerancí skoku po opuštění hrany a bufferem vstupu.

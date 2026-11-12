@@ -1,0 +1,12 @@
+{
+    "device": "Apple M2",
+    "gpu": "Apple M2",
+    "state": "{\"mode\":\"Playing\",\"x\":15.0,\"y\":2.25,\"elapsed\":8.016630172729492,\"lives\":3,\"score\":100,\"checkpoint\":0,\"grounded\":true}",
+    "width": 1600,
+    "height": 900,
+    "samples": 360,
+    "meanMs": 16.715585708618164,
+    "medianMs": 16.668750762939453,
+    "p95Ms": 17.667957305908203,
+    "maximumMs": 33.138336181640625
+}

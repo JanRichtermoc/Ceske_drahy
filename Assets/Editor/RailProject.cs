@@ -8,6 +8,7 @@ public static class RailProject
     [MenuItem("České dráhy/Prepare game scene")]
     public static void Prepare()
     {
+        EnsureMaterials();
         var scene=EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);
         new GameObject("České dráhy / game").AddComponent<RailGame>();
         System.IO.Directory.CreateDirectory("Assets/Scenes");
@@ -26,8 +27,25 @@ public static class RailProject
     [MenuItem("České dráhy/Build macOS")]
     public static void BuildMac()
     {
+        EnsureMaterials();
         var report=BuildPipeline.BuildPlayer(new BuildPlayerOptions{scenes=new[]{"Assets/Scenes/PrazskyVecer.unity"},locationPathName="Builds/CeskeDrahy.app",target=BuildTarget.StandaloneOSX,options=BuildOptions.None});
         if(report.summary.result!=UnityEditor.Build.Reporting.BuildResult.Succeeded)throw new System.Exception("Build failed: "+report.summary.result);
         Debug.Log("RAILWAY_BUILD_OK "+report.summary.totalSize);
+    }
+    public static void EnsureMaterials()
+    {
+        // Serialized references preserve runtime-created Standard materials in player builds.
+        if(!AssetDatabase.LoadAssetAtPath<Material>("Assets/Resources/Surface.mat"))
+        {
+            var material=new Material(Shader.Find("Standard")){name="Surface",enableInstancing=true};
+            AssetDatabase.CreateAsset(material,"Assets/Resources/Surface.mat");
+        }
+        if(!AssetDatabase.LoadAssetAtPath<Material>("Assets/Resources/SurfaceNormal.mat"))
+        {
+            var normal=new Material(Shader.Find("Standard")){name="Surface Normal",enableInstancing=true};
+            normal.SetTexture("_BumpMap",Resources.Load<Texture2D>("Textures/RailBallastNormal"));normal.EnableKeyword("_NORMALMAP");
+            AssetDatabase.CreateAsset(normal,"Assets/Resources/SurfaceNormal.mat");
+        }
+        AssetDatabase.SaveAssets();
     }
 }
