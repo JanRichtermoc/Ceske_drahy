@@ -8,12 +8,15 @@ namespace CeskeDrahy
         public enum Mode { Menu, Playing, Paused, Won, Lost }
         public Mode mode = Mode.Menu;
         public RailWorld world;
+        public RailChaos chaos;
+        public RailAudio audioMix;
+        public float hitShoutVolume;
         public Vector2 position = new Vector2(2,.12f), velocity;
         public bool grounded, muted, lowQuality, reducedMotion;
         public int lives = 3, score, checkpoint;
         public float elapsed, invulnerability, simTime;
         public float Progress => Mathf.Clamp01(position.x/174);
-        public string Zone => position.x < 50 ? "PRAHA HL. N." : position.x < 108 ? "VRŠOVICE" : "DEPO";
+        public string Zone => position.x < 50 ? "OLOMOUC HL. N." : position.x < 108 ? "PODCHODOVÝ CHAOS" : "NÁSTUPIŠTĚ 5";
         public Transform hero;
         public Camera view;
         public string notice = "";
@@ -21,12 +24,10 @@ namespace CeskeDrahy
         public float InputOverride = float.NaN;
         public bool JumpOverride;
         float jumpBuffer, coyote, axis, knockback, shake, accumulator;
-        bool jumpHeld, jumpReleased;
+        bool jumpReleased;
         RailWorld.Platform standing;
         Vector3 cameraVelocity;
         Transform legL,legR,armL,armR;
-        AudioSource sound;
-        AudioClip jumpSound, ticketSound, hurtSound, checkpointSound;
         readonly float[] attackTimers = new float[6];
         readonly bool[] hasThrown = new bool[6];
         readonly Transform[] projectiles = new Transform[12];
@@ -38,43 +39,42 @@ namespace CeskeDrahy
             Application.targetFrameRate=60;Application.runInBackground=true;QualitySettings.vSyncCount=1;
             world=new RailWorld();world.Build();
             hero=world.Person("David / hráč",new Vector3(position.x,position.y,0));
+            chaos=new RailChaos(this);
             legL=hero.Find("LegL");legR=hero.Find("LegR");armL=hero.Find("ArmL");armR=hero.Find("ArmR");
             view=new GameObject("Game Camera").AddComponent<Camera>(); view.tag="MainCamera";
             view.orthographic=true;view.orthographicSize=6.9f;view.farClipPlane=150;
             view.backgroundColor=new Color(.64f,.74f,.79f);view.clearFlags=CameraClearFlags.Skybox;
-            view.transform.rotation=Quaternion.Euler(9,-10,0);view.transform.position=new Vector3(10,6,-23);
+            view.transform.rotation=Quaternion.Euler(9,-10,0);view.transform.position=new Vector3(14,8,-23);
             view.gameObject.AddComponent<AudioListener>();
-            sound=gameObject.AddComponent<AudioSource>();sound.playOnAwake=false;
-            jumpSound=Tone(330,660,.16f);ticketSound=Tone(880,1320,.13f);hurtSound=Tone(160,60,.22f);checkpointSound=Tone(520,1040,.4f);
             muted=PlayerPrefs.GetInt("muted",0)==1;lowQuality=PlayerPrefs.GetInt("lowQuality",0)==1;reducedMotion=PlayerPrefs.GetInt("reducedMotion",0)==1;ApplyQuality();
+            hitShoutVolume=Mathf.Clamp01(PlayerPrefs.GetFloat("hitShoutVolume",.94f));
+            audioMix=gameObject.AddComponent<RailAudio>();
+            audioMix.Initialize(this);
             for(int i=0;i<projectiles.Length;i++)
             {projectiles[i]=world.Box("Revizorova brašna",Vector3.zero,new Vector3(.42f,.3f,.2f),world.rust);projectiles[i].gameObject.SetActive(false);}
             for(int i=0;i<attackTimers.Length;i++)attackTimers[i]=i*.6f;
             gameObject.AddComponent<RailHUD>().game=this;
             if(Array.IndexOf(Environment.GetCommandLineArgs(),"-rail-benchmark")>=0)gameObject.AddComponent<RailBenchmark>();
         }
-        AudioClip Tone(float from,float to,float duration)
-        {
-            int count=(int)(22050*duration);var samples=new float[count];float phase=0;
-            for(int i=0;i<count;i++){float t=(float)i/count;phase+=Mathf.Lerp(from,to,t)*2*Mathf.PI/22050;samples[i]=Mathf.Sin(phase)*Mathf.Sin(t*Mathf.PI)*.15f;}
-            var clip=AudioClip.Create("Rail tone",count,1,22050,false);clip.SetData(samples,0);return clip;
-        }
-        void Play(AudioClip clip){if(!muted)sound.PlayOneShot(clip);}
+        public void Boing(){audioMix.Spring();}
+        public void Celebrate(){audioMix.Celebrate();}
+        public void Launch(float power){velocity.y=power;grounded=false;standing=null;coyote=0;jumpBuffer=0;chaos.airJumpReady=true;}
         public void ApplyQuality(){QualitySettings.shadows=lowQuality?ShadowQuality.Disable:ShadowQuality.All;QualitySettings.antiAliasing=lowQuality?0:4;}
-        public void SaveSettings(){PlayerPrefs.SetInt("muted",muted?1:0);PlayerPrefs.SetInt("lowQuality",lowQuality?1:0);PlayerPrefs.SetInt("reducedMotion",reducedMotion?1:0);PlayerPrefs.Save();ApplyQuality();}
+        public void SaveSettings(){PlayerPrefs.SetInt("muted",muted?1:0);PlayerPrefs.SetInt("lowQuality",lowQuality?1:0);PlayerPrefs.SetInt("reducedMotion",reducedMotion?1:0);PlayerPrefs.SetFloat("hitShoutVolume",hitShoutVolume);PlayerPrefs.Save();ApplyQuality();}
         public void StartRun()
         {
             mode=Mode.Playing;lives=3;score=0;checkpoint=0;elapsed=0;simTime=0;position=new Vector2(2,.12f);velocity=Vector2.zero;standing=null;
             grounded=false;invulnerability=0;jumpBuffer=0;coyote=0;knockback=0;accumulator=0;
+            audioMix.ResetRun();chaos.Reset();hero.gameObject.SetActive(true);hero.localRotation=Quaternion.identity;
             for(int i=0;i<world.tickets.Count;i++)world.tickets[i].gameObject.SetActive(true);
             for(int i=0;i<projectiles.Length;i++){projectileLife[i]=0;projectiles[i].gameObject.SetActive(false);}
             for(int i=0;i<attackTimers.Length;i++){attackTimers[i]=i*.6f;hasThrown[i]=false;}
-            Notice("STIHNI POSLEDNÍ SPOJ.  Nástupiště 3 čeká.");
+            Notice("VÍTEJ V OLOMOUCI. Vlak počká. Holubi ne.");
             view.transform.position=new Vector3(8,6,-23);cameraVelocity=Vector3.zero;
         }
         public void Notice(string text){notice=text;noticeTime=4;}
         public void TogglePause(){if(mode==Mode.Playing)mode=Mode.Paused;else if(mode==Mode.Paused)mode=Mode.Playing;}
-        public void Menu(){mode=Mode.Menu;InputOverride=float.NaN;}
+        public void Menu(){mode=Mode.Menu;InputOverride=float.NaN;hero.gameObject.SetActive(true);}
         void OnApplicationFocus(bool focus){if(!focus && mode==Mode.Playing && float.IsNaN(InputOverride))mode=Mode.Paused;}
         void Update()
         {
@@ -88,11 +88,11 @@ namespace CeskeDrahy
                 float dt=Mathf.Min(Time.deltaTime,.08f);
                 axis=float.IsNaN(InputOverride)?((Input.GetKey(KeyCode.D)||Input.GetKey(KeyCode.RightArrow)?1:0)-(Input.GetKey(KeyCode.A)||Input.GetKey(KeyCode.LeftArrow)?1:0)):InputOverride;
                 bool pressed=Input.GetKeyDown(KeyCode.Space)||Input.GetKeyDown(KeyCode.W)||Input.GetKeyDown(KeyCode.UpArrow)||JumpOverride;
-                jumpHeld=Input.GetKey(KeyCode.Space)||Input.GetKey(KeyCode.W)||Input.GetKey(KeyCode.UpArrow)||JumpOverride;
                 jumpReleased=Input.GetKeyUp(KeyCode.Space)||Input.GetKeyUp(KeyCode.W)||Input.GetKeyUp(KeyCode.UpArrow);
                 if(pressed)jumpBuffer=.14f;
+                if(Input.GetKeyDown(KeyCode.LeftShift)||Input.GetKeyDown(KeyCode.RightShift))chaos.Dash();
                 accumulator+=dt;
-                while(accumulator>=1f/120){Step(1f/120);accumulator-=1f/120;}
+                while(mode==Mode.Playing && accumulator>=1f/120){Step(1f/120);accumulator-=1f/120;}
                 JumpOverride=false;jumpReleased=false;
                 AnimateHero(dt);
             }
@@ -102,11 +102,14 @@ namespace CeskeDrahy
         public void Step(float dt)
         {
             simTime+=dt;elapsed+=dt;noticeTime-=dt;invulnerability-=dt;knockback-=dt;shake=Mathf.Max(0,shake-dt);
+            chaos.BeforeStep(dt);
             world.Tick(simTime,dt);
             if(standing!=null)position.x+=standing.delta;
             coyote=grounded?.11f:coyote-dt;jumpBuffer-=dt;
-            if(knockback<=0)velocity.x=Mathf.MoveTowards(velocity.x,axis*7.8f,(grounded?55:32)*dt);
-            if(jumpBuffer>0 && coyote>0){velocity.y=13.6f;grounded=false;standing=null;coyote=0;jumpBuffer=0;Play(jumpSound);}
+            if(chaos.dash>0)velocity.x=(Mathf.Abs(axis)>.1f?Mathf.Sign(axis):Mathf.Sign(hero.localScale.x))*16;
+            else if(knockback<=0)velocity.x=Mathf.MoveTowards(velocity.x,axis*7.8f*chaos.SpeedMultiplier,(grounded?55:32)*dt);
+            if(jumpBuffer>0 && coyote>0){velocity.y=13.6f;grounded=false;standing=null;coyote=0;jumpBuffer=0;audioMix.Jump();}
+            else if(jumpBuffer>0 && !grounded && chaos.AirJump()){velocity.y=12.3f;jumpBuffer=0;audioMix.Spring();}
             if(jumpReleased && velocity.y>5)velocity.y=5;
             velocity.y-=28*dt;
             var old=position;var next=position+velocity*dt;
@@ -126,13 +129,14 @@ namespace CeskeDrahy
             position=next;position.x=Mathf.Max(-7.5f,position.x);
             if(position.y< -4){Respawn(true);return;}
             for(int i=0;i<world.tickets.Count;i++)if(world.tickets[i].gameObject.activeSelf && Vector2.Distance(position+Vector2.up*.9f,world.tickets[i].position)<.85f)
-            {world.tickets[i].gameObject.SetActive(false);score+=100;Play(ticketSound);}
-            for(int i=0;i<world.birds.Count;i++)if(Vector2.Distance(position+Vector2.up,world.birds[i].position)<.67f)Damage(world.birds[i].position.x);
+            {world.tickets[i].gameObject.SetActive(false);chaos.Ticket();audioMix.Ticket();}
+            for(int i=0;i<world.birds.Count;i++)if(!chaos.Bird(i,old)&&Vector2.Distance(position+Vector2.up,world.birds[i].position)<.67f)Damage(world.birds[i].position.x);
             for(int i=0;i<world.inspectors.Count;i++)
             {
                 var man=world.inspectors[i];float distance=Mathf.Abs(position.x-man.position.x);
-                if(distance>19){world.signals[i].gameObject.SetActive(false);continue;}
-                attackTimers[i]+=dt;float cycle=attackTimers[i]%3.8f;
+                if(chaos.Inspector(i,old)){world.signals[i].gameObject.SetActive(false);continue;}
+                if(distance>12){world.signals[i].gameObject.SetActive(false);continue;}
+                attackTimers[i]+=dt;float cycle=attackTimers[i]%4.6f;
                 bool warning=cycle>2.1f && cycle<2.9f;world.signals[i].gameObject.SetActive(warning);
                 if(warning)world.signals[i].localScale=Vector3.one*(.18f+Mathf.PingPong(simTime*1.3f,.2f));
                 if(cycle>=2.9f && !hasThrown[i]){Throw(man.position+Vector3.up*1.3f);hasThrown[i]=true;}
@@ -145,11 +149,12 @@ namespace CeskeDrahy
                 if(Vector2.Distance(position+Vector2.up*.85f,projectiles[i].position)<.62f){Damage(projectiles[i].position.x);projectileLife[i]=0;}
                 if(projectileLife[i]<=0)projectiles[i].gameObject.SetActive(false);
             }
-            if(grounded && position.x>51 && position.x<61 && checkpoint<1){checkpoint=1;Notice("CHECKPOINT  /  VRŠOVICE");Play(checkpointSound);}
-            if(grounded && position.x>107 && position.x<117 && checkpoint<2){checkpoint=2;Notice("CHECKPOINT  /  DEPO");Play(checkpointSound);}
+            if(grounded && position.x>51 && position.x<61 && checkpoint<1){checkpoint=1;lives=Mathf.Max(lives,2);Notice("CHECKPOINT / PODCHOD. Teď už jen přežít zkratku.");Celebrate();}
+            if(grounded && position.x>107 && position.x<117 && checkpoint<2){checkpoint=2;lives=Mathf.Max(lives,2);Notice("CHECKPOINT / NÁSTUPIŠTĚ 5. Skoro doma!");Celebrate();}
+            chaos.AfterMove(dt,old);
             if(grounded && position.x>=174)
             {
-                mode=Mode.Won;Play(checkpointSound);
+                mode=Mode.Won;Celebrate();
                 int best=PlayerPrefs.GetInt("best",0);if(score>best)PlayerPrefs.SetInt("best",score);PlayerPrefs.Save();
             }
         }
@@ -160,23 +165,27 @@ namespace CeskeDrahy
         }
         public void Damage(float sourceX)
         {
-            if(invulnerability>0 || mode!=Mode.Playing)return;
-            lives--;Play(hurtSound);shake=.25f;invulnerability=2;velocity=new Vector2(position.x<sourceX?-6:6,7);knockback=.35f;grounded=false;standing=null;
+            if(invulnerability>0 || chaos.dash>0 || mode!=Mode.Playing)return;
+            chaos.BreakCombo();chaos.PopText("ÁÁÁ! REKLAMACE!",position+Vector2.up*2, new Color(1,.46f,.4f));
+            lives--;audioMix.Hit();shake=.34f;invulnerability=2;velocity=new Vector2(position.x<sourceX?-4.4f:4.4f,7);knockback=.23f;grounded=false;standing=null;
             if(lives<=0)mode=Mode.Lost;
         }
         public void Respawn(bool loseLife)
         {
-            if(loseLife){lives--;Play(hurtSound);if(lives<=0){mode=Mode.Lost;return;}}
+            if(loseLife){lives--;audioMix.Hit();if(lives<=0){mode=Mode.Lost;return;}}
             position=checkpoint==0?new Vector2(2,.12f):checkpoint==1?new Vector2(54,.8f):new Vector2(110,1);
             velocity=Vector2.zero;grounded=false;standing=null;invulnerability=2;jumpBuffer=0;coyote=0;knockback=0;
+            chaos.ClearTransient();chaos.BreakCombo();
             for(int i=0;i<projectiles.Length;i++){projectileLife[i]=0;projectiles[i].gameObject.SetActive(false);}
             Notice(loseLife?"ZPÁTKY NA NÁSTUPIŠTI.  Zkus další skok.":"NÁVRAT NA CHECKPOINT");
         }
         void AnimateHero(float dt)
         {
             hero.position=new Vector3(position.x,position.y,0);
-            float facing=velocity.x<-.2f?-1:velocity.x>.2f?1:hero.localScale.x;
+            float facing=velocity.x<-.2f?-1:velocity.x>.2f?1:Mathf.Sign(hero.localScale.x);
             hero.localScale=new Vector3(facing,1,1);
+            if(!reducedMotion){float stretch=grounded?Mathf.Abs(velocity.x)>.5f?Mathf.Sin(simTime*28)*.025f:0:.035f;hero.localScale=new Vector3(facing*(1-stretch),1+stretch,1);}
+            hero.localRotation=Quaternion.Euler(0,0,chaos.dash>0?-facing*16:0);
             float cycle=grounded?Mathf.Sin(simTime*14)*Mathf.Clamp01(Mathf.Abs(velocity.x)/5)*28:20;
             legL.localRotation=Quaternion.Euler(0,0,cycle);legR.localRotation=Quaternion.Euler(0,0,-cycle);
             armL.localRotation=Quaternion.Euler(0,0,-cycle);armR.localRotation=Quaternion.Euler(0,0,cycle);
@@ -185,11 +194,12 @@ namespace CeskeDrahy
         }
         void UpdateCamera(float dt)
         {
-            Vector3 target=mode==Mode.Menu?new Vector3(10,6,-23):new Vector3(Mathf.Clamp(position.x+4,8,171),6.3f+Mathf.Max(0,position.y-3)*.25f,-23);
+            Vector3 target=mode==Mode.Menu?new Vector3(14,8,-23):new Vector3(Mathf.Clamp(position.x+4,8,171),6.3f+Mathf.Max(0,position.y-3)*.25f,-23);
+            view.orthographicSize=Mathf.Lerp(view.orthographicSize,mode==Mode.Menu?8f:6.9f,Mathf.Clamp01(dt*8));
             view.transform.position=Vector3.SmoothDamp(view.transform.position,target,ref cameraVelocity,.22f,Mathf.Infinity,Mathf.Min(dt,.08f));
             if(shake>0&&!reducedMotion)view.transform.position+=new Vector3(Mathf.Sin(simTime*90),Mathf.Cos(simTime*80),0)*shake*.12f;
         }
-        public string Snapshot() => JsonUtility.ToJson(new SnapshotData{mode=mode.ToString(),x=position.x,y=position.y,grounded=grounded,lives=lives,score=score,checkpoint=checkpoint,elapsed=elapsed});
-        [Serializable] class SnapshotData {public string mode;public float x,y,elapsed;public int lives,score,checkpoint;public bool grounded;}
+        public string Snapshot() => JsonUtility.ToJson(new SnapshotData{mode=mode.ToString(),x=position.x,y=position.y,grounded=grounded,lives=lives,score=score,checkpoint=checkpoint,elapsed=elapsed,infection=chaos.infection,combo=chaos.combo,tickets=chaos.ticketsCollected});
+        [Serializable] class SnapshotData {public string mode;public float x,y,elapsed,infection;public int lives,score,checkpoint,combo,tickets;public bool grounded;}
     }
 }

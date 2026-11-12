@@ -15,7 +15,7 @@ namespace CeskeDrahy
             var args=Environment.GetCommandLineArgs();int index=Array.IndexOf(args,"-rail-benchmark");
             if(index<0 || index+1>=args.Length){Destroy(this);return;}
             output=Path.GetFullPath(args[index+1]);Directory.CreateDirectory(output);
-            game=GetComponent<RailGame>();game.StartRun();game.InputOverride=0;game.position=new Vector2(15,2.25f);game.muted=true;
+            game=GetComponent<RailGame>();game.StartRun();game.InputOverride=0;game.position=new Vector2(15,2.25f);game.muted=false;
         }
         void Update()
         {

@@ -87,11 +87,11 @@ namespace CeskeDrahy
                 for(int side=-1;side<=1;side+=2) Box("Rail",new Vector3(92,-.77f,z+side*.8f),new Vector3(220,.13f,.09f),steel);
                 for(int i=-8;i<202;i+=2) Box("Sleeper",new Vector3(i,-.91f,z),new Vector3(.25f,.16f,2.4f),dark);
             }
-            PlatformStation(0,16,.12f,"PRAHA  /  HLAVNÍ NÁDRAŽÍ");
+            PlatformStation(0,16,.12f,"OLOMOUC  /  HLAVNÍ NÁDRAŽÍ");
             Train(15,10,2.25f,0); Train(28,10,2.6f,1); Train(42,11,2.3f,2);
-            PlatformStation(56,12,.8f,"01  /  VRŠOVICE");
+            PlatformStation(56,12,.8f,"01  /  PODCHOD");
             Train(70,10,2.7f,0); Train(84,10,3.1f,1,.7f); Train(98,10,2.65f,2);
-            PlatformStation(112,12,1,"02  /  DEPO");
+            PlatformStation(112,12,1,"02  /  NÁSTUPIŠTĚ 5");
             Train(126,10,3,1); Train(140,10,3.5f,0,.6f); Train(154,10,2.8f,2);
             PlatformStation(170,18,1.2f,"CÍL  /  POSLEDNÍ SPOJ");
             foreach(var p in platforms)
@@ -113,7 +113,7 @@ namespace CeskeDrahy
                 Box("Right wing",new Vector3(0,.08f,.3f),new Vector3(.55f,.065f,.58f),dark,b);
                 birds.Add(b);birdOrigins.Add(new Vector2(x,5.2f));
             }
-            foreach(float x in new[]{32f,46f,88f,102f,144f,158f})
+            foreach(float x in new[]{32f,88f,144f})
             {
                 var p=platforms.Find(v=>x>=v.Left && x<=v.Right);
                 var man=Person("Revizor",new Vector3(x,p.top,0),true);
@@ -121,6 +121,7 @@ namespace CeskeDrahy
                 inspectors.Add(man);signals.Add(warn);
             }
             Background();
+            OlomoucStation.Build(this);
             RenderSettings.skybox=new Material(Resources.Load<Shader>("EveningSky"));
             Box("Finish gate",new Vector3(175,3.5f,1),new Vector3(.17f,5, .2f),gold);
             Box("Finish flag",new Vector3(176,5.5f,1),new Vector3(2,1,.08f),blue);
@@ -198,9 +199,9 @@ namespace CeskeDrahy
             wrapper.localPosition=new Vector3(0,top-1.55f,0);
             return true;
         }
-        public Transform Person(string name,Vector3 position,bool inspector=false)
+        public Transform Person(string name,Vector3 position,bool inspector=false,bool street=false)
         {
-            var p=Group(name,position); var jacket=inspector?navy:Mat("Hero jacket","#D68342");
+            var p=Group(name,position); var jacket=street?Mat("Patched coat","#6C6750"):inspector?navy:Mat("Hero jacket","#E48A3C");
             Box("Torso",new Vector3(0,1.06f,0),new Vector3(.52f,.65f,.35f),jacket,p,PrimitiveType.Capsule);
             Box("Shirt",new Vector3(.02f,1.2f,-.18f),new Vector3(.12f,.35f,.025f),cream,p);
             Box("Neck",new Vector3(0,1.44f,0),new Vector3(.18f,.23f,.18f),skin,p,PrimitiveType.Cylinder);
@@ -219,6 +220,13 @@ namespace CeskeDrahy
             }
             if(inspector){Box("Cap",new Vector3(0,1.88f,0),new Vector3(.46f,.1f,.42f),navy,p);Box("Badge",new Vector3(.14f,1.25f,-.2f),Vector3.one*.09f,gold,p);}
             else {Box("Backpack",new Vector3(-.1f,1.15f,.25f),new Vector3(.47f,.58f,.25f),green,p,PrimitiveType.Capsule);}
+            if(street)
+            {
+                Box("Wool cap",new Vector3(0,1.88f,0),new Vector3(.47f,.3f,.42f),rust,p,PrimitiveType.Sphere);
+                Box("Beard",new Vector3(.03f,1.5f,-.12f),new Vector3(.34f,.26f,.21f),Mat("Grey beard","#ABABA0"),p,PrimitiveType.Sphere);
+                Box("Coat patch",new Vector3(-.15f,1.07f,-.19f),new Vector3(.16f,.22f,.03f),gold,p);
+                Box("Coat patch",new Vector3(.12f,.93f,-.19f),new Vector3(.19f,.14f,.03f),rust,p);
+            }
             return p;
         }
         void Background()
@@ -226,9 +234,10 @@ namespace CeskeDrahy
             var rng=new System.Random(42);
             for(int i=-20;i<205;i+=9)
             {
+                if(i>-18 && i<44)continue;
                 float h=4+(float)rng.NextDouble()*6;
                 var wall=Mat("Facade"+(i%3),i%3==0?"#B5A494":i%3==1?"#C4BDAA":"#8C9D9B");
-                Box("Prague building",new Vector3(i,h/2-1,17),new Vector3(8,h,6),wall);
+                Box("Hodolany building",new Vector3(i,h/2-1,17),new Vector3(8,h,6),wall);
                 Box("Cornice",new Vector3(i,h-.8f,17),new Vector3(8.4f,.25f,6.4f),cream);
                 foreach(int side in new[]{-1,1})
                 {var roof=Box("Pitched roof",new Vector3(i,h+.15f,17+side*1.65f),new Vector3(8.3f,.16f,3.8f),rust);roof.localRotation=Quaternion.Euler(side*24,0,0);}
@@ -250,6 +259,7 @@ namespace CeskeDrahy
             }
             for(int i=10;i<180;i+=17)
             {
+                if(i<44)continue;
                 Box("Tree trunk",new Vector3(i,1.7f,10),new Vector3(.35f,5,.35f),rust);
                 for(int n=0;n<4;n++)Box("Tree crown",new Vector3(i+Mathf.Sin(n*2)*1.1f,3.4f+n*.45f,10+Mathf.Cos(n*2)*.65f),new Vector3(2.6f,3.2f,2.5f),green,null,PrimitiveType.Sphere);
             }

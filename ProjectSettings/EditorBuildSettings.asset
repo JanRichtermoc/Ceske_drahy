@@ -6,6 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/PrazskyVecer.unity
+    path: Assets/Scenes/OlomoucHlavniNadrazi.unity
     guid: 7aa822a6d618549a990197c51ffdfed9
   m_configObjects: {}

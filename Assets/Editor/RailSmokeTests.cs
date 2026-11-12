@@ -34,7 +34,7 @@ public static class RailSmokeTests
             Check(fullPeak>3.1f && shortPeak<fullPeak-1,"Variable-height jump");passed.Add("variable jump height");
             g.StartRun();g.position=new Vector2(8.3f,.12f);g.grounded=false;Field("coyote").SetValue(g,.09f);Field("jumpBuffer").SetValue(g,.14f);Tick(g,1);
             Check(g.velocity.y>10,"Coyote jump outside platform");passed.Add("coyote time");
-            g.StartRun();g.position=new Vector2(2,.14f);g.velocity=new Vector2(0,-3);Field("jumpBuffer").SetValue(g,.14f);Tick(g,3);
+            g.StartRun();g.position=new Vector2(2,.14f);g.chaos.airJumpReady=false;g.velocity=new Vector2(0,-3);Field("jumpBuffer").SetValue(g,.14f);Tick(g,3);
             Check(g.velocity.y>10,"A buffered jump must fire immediately after landing");passed.Add("jump buffer");
             g.StartRun();g.position=new Vector2(25,4.2f);Tick(g,1);
             Check(g.lives==2,"Pigeon overlap must damage the player");passed.Add("pigeon collision");
@@ -42,6 +42,16 @@ public static class RailSmokeTests
             Check(g.lives<3,"An inspector must throw a bag that can hit a stationary player");passed.Add("inspector projectile collision");
             g.StartRun();g.position=new Vector2(84,3.1f);Tick(g,2);float x=g.position.x;Tick(g,45);
             Check(g.grounded && Mathf.Abs(g.position.x-x)>.01f,"Moving train must carry the player");passed.Add("moving train carry");
+            g.StartRun();g.position=new Vector2(5.5f,.12f);Tick(g,2);
+            Check(g.velocity.y>16,"Suitcase must launch the player");passed.Add("suitcase launch");
+            Field("jumpBuffer").SetValue(g,.14f);Tick(g,1);
+            Check(!g.chaos.airJumpReady && g.velocity.y>10,"One extra jump is available in the air");passed.Add("double jump");
+            g.StartRun();g.chaos.Dash();g.Damage(3);Tick(g,1);
+            Check(g.lives==3 && Mathf.Abs(g.velocity.x)>14,"Dash must move and avoid damage");passed.Add("dash");
+            g.StartRun();g.position=new Vector2(41.4f,2.3f);Tick(g,490);
+            Check(g.chaos.infection>0 && g.chaos.SpeedMultiplier<1,"Syringe projectile must infect and slow the player");passed.Add("syringe infection");
+            g.position=new Vector2(52,.8f);g.velocity=Vector2.zero;Tick(g,2);
+            Check(g.chaos.infection==0 && !g.chaos.medkits[0].gameObject.activeSelf,"Collecting a medkit clears infection");passed.Add("medkit cure");
             g.StartRun();Field("axis").SetValue(g,1f);var visited=new HashSet<int>();
             for(int i=0;i<120*60 && g.mode==RailGame.Mode.Playing;i++)
             {
