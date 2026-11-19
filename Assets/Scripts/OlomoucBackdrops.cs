@@ -50,13 +50,13 @@ namespace CeskeDrahy
                 w.Box("Side pane",new Vector3(side*1.85f,1.35f,.75f),new Vector3(.05f,1.9f,1.1f),pane,g);
             }
             w.Box("Roof",new Vector3(0,2.55f,.8f),new Vector3(4.1f,.14f,1.6f),frame,g);
-            w.Box("Bench",new Vector3(0,.45f,1.05f),new Vector3(2.6f,.08f,.4f),w.Surfaced("Bench wood","Planks","#B07A55",1.5f,.6f,.3f),g);
+            w.Box("Bench",new Vector3(0,.45f,1.05f),new Vector3(2.6f,.08f,.4f),w.Surfaced("Bench wood","Planks"),g);
             w.Box("Timetable",new Vector3(1.2f,1.4f,1.29f),new Vector3(.6f,.8f,.03f),w.cream,g);
         }
 
         static void Lawn(RailWorld w,string color,float zFrom=10,float zTo=70)
         {
-            w.Box("Trávník",new Vector3(Mid(w),Ground+.02f,(zFrom+zTo)*.5f),new Vector3(Span(w),.1f,zTo-zFrom),w.Surfaced("Lawn "+color,"Grass",color,3.5f,.7f,.06f));
+            w.Box("Trávník",new Vector3(Mid(w),Ground+.02f,(zFrom+zTo)*.5f),new Vector3(Span(w),.1f,zTo-zFrom),w.Surfaced("Lawn","Grass"));
         }
 
         static void Lamp(RailWorld w,Vector3 at,bool lit)
@@ -83,13 +83,13 @@ namespace CeskeDrahy
             {
                 Lamp(w,new Vector3(x,Ground,11.6f),false);
                 var bench=w.Group("Lavička",new Vector3(x+5,Ground,11.8f));
-                w.Box("Seat",new Vector3(0,.48f,0),new Vector3(1.8f,.08f,.45f),w.Surfaced("Bench wood","Planks","#B07A55",1.5f,.6f,.3f),bench);
-                w.Box("Back",new Vector3(0,.85f,.2f),new Vector3(1.8f,.4f,.06f),w.Surfaced("Bench wood","Planks","#B07A55",1.5f,.6f,.3f),bench);
+                w.Box("Seat",new Vector3(0,.48f,0),new Vector3(1.8f,.08f,.45f),w.Surfaced("Bench wood","Planks"),bench);
+                w.Box("Back",new Vector3(0,.85f,.2f),new Vector3(1.8f,.4f,.06f),w.Surfaced("Bench wood","Planks"),bench);
                 w.Box("Legs",new Vector3(0,.24f,0),new Vector3(1.6f,.48f,.4f),fence,bench);
             }
             // Výstaviště Flora: modernist exhibition pavilion and the palm house.
             var hall=w.Group("Výstaviště Flora / pavilon",new Vector3(70,Ground,40));
-            var white=w.Mat("Pavilion render","#E7E3D6",smooth:.3f);
+            var white=w.Surfaced("Pavilion render","Plaster","#E7E3D6");
             w.Box("Pavilion body",new Vector3(0,4,0),new Vector3(44,8,16),white,hall);
             w.Box("Glass band",new Vector3(0,4.4f,-8.05f),new Vector3(40,4.6f,.1f),w.glass,hall);
             for(float i=-20;i<=20;i+=2.5f)w.Box("Mullion",new Vector3(i,4.4f,-8.12f),new Vector3(.14f,4.6f,.08f),white,hall);
@@ -111,10 +111,11 @@ namespace CeskeDrahy
         {
             Lawn(w,"#7A9A5C",10,20);
             w.Catenary(-10,w.Length-15);Shelter(w,-3,w.Level.Platforms[0].z);
-            w.Box("Ulice",new Vector3(Mid(w),Ground+.03f,14.5f),new Vector3(Span(w),.08f,5),w.Surfaced("Asphalt","Asphalt","#8C8F94",4,.6f,.3f));
+            w.Box("Ulice",new Vector3(Mid(w),Ground+.03f,14.5f),new Vector3(Span(w),.08f,5),w.Surfaced("Asphalt","Asphalt"));
             for(float x=-14;x<w.Length;x+=6)w.Box("Lane mark",new Vector3(x,Ground+.08f,14.5f),new Vector3(2.6f,.02f,.18f),w.cream);
-            var blockA=w.Facade("Hospital facade A",new Color(.9f,.91f,.9f),new Color(.32f,.5f,.62f),new Color(.95f,.93f,.8f),14,6,.08f,3);
-            var blockB=w.Facade("Hospital facade B",new Color(.86f,.89f,.92f),new Color(.28f,.45f,.6f),new Color(.95f,.93f,.8f),10,9,.08f,5);
+            var frameWhite=new Color(.86f,.87f,.86f);
+            var blockA=w.Facade("Hospital facade A","PanelConcrete","#E2E4E2",frameWhite,new Color(.3f,.47f,.58f),new Color(.95f,.93f,.8f),2.4f,3.1f,.62f,.5f,.08f,RailWorld.WindowStyle.Ribbon,3);
+            var blockB=w.Facade("Hospital facade B","PanelConcrete","#D6DDE4",frameWhite,new Color(.27f,.43f,.57f),new Color(.95f,.93f,.8f),2.4f,3,.55f,.48f,.08f,RailWorld.WindowStyle.Panel,5);
             var accent=w.Mat("Hospital accent","#3F7FA6",.2f,.5f);
             for(float x=30;x<w.Length;x+=105)
             {
@@ -167,7 +168,7 @@ namespace CeskeDrahy
             w.Catenary(-10,w.Length-15);
             // Small station building of Olomouc město.
             var station=w.Group("Olomouc město / výpravní budova",new Vector3(10,Ground,13.5f));
-            var ochre=w.Mat("Station ochre","#CBA86E",smooth:.2f);var roof=w.Mat("Slate roof","#3B4249",.2f,.35f);
+            var ochre=w.Surfaced("Station ochre","Plaster","#CBA86E");var roof=w.Painted("Slate roof","MetalPlate","#3B4249",.5f,.35f,.2f);
             w.Box("Body",new Vector3(0,3.5f,0),new Vector3(16,7,7),ochre,station);
             var hip=w.Spire("Hip roof",new Vector3(0,7,0),1,1,roof,station);hip.localScale=new Vector3(17,3.2f,8);
             for(float i=-6;i<=6;i+=2.4f)
@@ -184,15 +185,15 @@ namespace CeskeDrahy
                 float width=Rand(rng,6,8.5f),height=Rand(rng,5,7.5f);
                 var house=w.Group("Měšťanský dům",new Vector3(x+width*.5f,Ground,21));
                 int tint=rng.Next(pastel.Length);ColorUtility.TryParseHtmlString(pastel[tint],out var paint);
-                var wall=w.Facade("Burgher facade "+tint,paint,new Color(.2f,.27f,.32f),new Color(1,.86f,.55f),3,3,.05f,tint+40);
+                var wall=w.Facade("Burgher facade "+tint,"Plaster",pastel[tint],new Color(.84f,.82f,.77f),new Color(.2f,.27f,.32f),new Color(1,.86f,.55f),2.3f,2.9f,.44f,.5f,.05f,RailWorld.WindowStyle.OldTown,tint+40,.6f);
                 w.Box("Facade",new Vector3(0,height*.5f,0),new Vector3(width,height,8),wall,house);
-                var gable=w.Spire("Gable roof",new Vector3(0,height,0),1,1,w.Surfaced("Old town roof tiles","RoofTiles","#B65A47",1.4f,.8f,.2f),house);gable.localScale=new Vector3(width+.3f,Rand(rng,2.5f,4),8.4f);
+                var gable=w.Spire("Gable roof",new Vector3(0,height,0),1,1,w.Surfaced("Old town roof tiles","RoofTiles"),house);gable.localScale=new Vector3(width+.3f,Rand(rng,2.5f,4),8.4f);
                 x+=width+.15f;
             }
-            w.Box("Ulice",new Vector3(Mid(w),Ground+.03f,16.5f),new Vector3(Span(w),.08f,5),w.Surfaced("Asphalt","Asphalt","#8C8F94",4,.6f,.3f));
+            w.Box("Ulice",new Vector3(Mid(w),Ground+.03f,16.5f),new Vector3(Span(w),.08f,5),w.Surfaced("Asphalt","Asphalt"));
             Tram(w,16.5f);
             // Skyline: St. Moritz, the town hall tower, the Holy Trinity Column and St. Wenceslas cathedral.
-            var stone=w.Mat("Sandstone","#C7B79A",smooth:.15f);var slate=w.Mat("Dark spire","#3A4048",.3f,.35f);var gilt=w.Mat("Gilding","#E2B44A",.8f,.7f);
+            var stone=w.Surfaced("Sandstone","PanelConcrete","#C7B79A");var slate=w.Mat("Dark spire","#3A4048",.3f,.35f);var gilt=w.Mat("Gilding","#E2B44A",.8f,.7f);
             var moritz=w.Group("Kostel sv. Mořice",new Vector3(38,Ground,44));
             w.Box("Nave",new Vector3(6,8,0),new Vector3(16,16,10),stone,moritz);
             w.Box("North tower",new Vector3(-3,13,0),new Vector3(5,26,5),stone,moritz);
@@ -226,12 +227,12 @@ namespace CeskeDrahy
             w.Catenary(-10,w.Length-15);Shelter(w,-3,w.Level.Platforms[0].z);
             var water=w.Water("Morava water","#2A515E");
             w.Box("Řeka Morava",new Vector3(center,-2.2f,22),new Vector3(width+.5f,.2f,95),water);
-            var quay=w.Surfaced("Quay stone","Concrete","#9A968C",2,.8f,.12f);
+            var quay=w.Surfaced("Quay stone","PanelConcrete","#A29E94");
             foreach(float x in new[]{river.x,river.y})w.Box("Nábřeží",new Vector3(x,-1.85f,22),new Vector3(.6f,1,95),quay);
             // Deck bridge: girders below the track keep the view of the roofs clear.
-            var concrete=w.Surfaced("Bridge concrete","Concrete","#B4B2AA",3,.6f,.15f);
+            var concrete=w.Surfaced("Bridge concrete","Concrete","#B4B2AA");
             w.Box("Bridge deck",new Vector3(center,-1.15f,4),new Vector3(width,.3f,13),concrete);
-            w.Box("Bridge ballast",new Vector3(center,-1.02f,4),new Vector3(width,.08f,12),w.Mat("Bridge ballast","#7D7468",smooth:.05f));
+            w.Box("Bridge ballast",new Vector3(center,-1.02f,4),new Vector3(width,.08f,12),w.Surfaced("Track ballast","Ballast"));
             foreach(float z in new[]{-2.1f,4,10.1f})w.Box("Plate girder",new Vector3(center,-1.85f,z),new Vector3(width,1.1f,.35f),w.Mat("Girder green","#4F6A5B",.45f,.4f));
             foreach(float x in new[]{river.x+width/3,river.x+width*2/3})w.Box("Bridge pier",new Vector3(x,-2.6f,4),new Vector3(2,1.6f,14),concrete);
             w.Box("Back railing",new Vector3(center,-.45f,10.4f),new Vector3(width,.08f,.08f),w.steel);
@@ -251,8 +252,8 @@ namespace CeskeDrahy
             {
                 if(x>river.x-6 && x<river.y+6)continue;
                 var house=w.Group("Rodinný dům",new Vector3(x,Ground,34));
-                w.Box("Walls",new Vector3(0,2.5f,0),new Vector3(7,5,6),w.Mat("House render","#E3DCCB",smooth:.15f),house);
-                int tile=rng.Next(3);var roof=w.Spire("Roof",new Vector3(0,5,0),1,1,w.Surfaced("Roof tiles "+tile,"RoofTiles",roofs[tile],1.6f,.8f,.2f),house);roof.localScale=new Vector3(7.6f,3,6.6f);
+                w.Box("Walls",new Vector3(0,2.5f,0),new Vector3(7,5,6),w.Surfaced("House render","Plaster","#E3DCCB"),house);
+                int tile=rng.Next(3);var roof=w.Spire("Roof",new Vector3(0,5,0),1,1,w.Surfaced("Roof tiles","RoofTiles"),house);roof.localScale=new Vector3(7.6f,3,6.6f);
                 w.Box("Window",new Vector3(-1.5f,2.6f,-3.02f),new Vector3(1.2f,1.2f,.05f),w.glass,house);
                 w.Box("Window",new Vector3(1.5f,2.6f,-3.02f),new Vector3(1.2f,1.2f,.05f),w.glass,house);
             }
@@ -262,19 +263,19 @@ namespace CeskeDrahy
         {
             Lawn(w,"#7C7A5E",10,70);
             var rng=new System.Random(41);
-            var concrete=w.Surfaced("Silo concrete","Concrete","#CFC9BC",4,.6f,.12f);
+            var concrete=w.Surfaced("Silo concrete","SiloConcrete","#CFC9BC");
             var silo=w.Group("Sila",new Vector3(78,Ground,30));
             for(int row=0;row<2;row++)for(int i=0;i<4;i++)w.Cylinder("Silo",new Vector3(i*5.2f,11,row*5.2f),5,22,concrete,silo);
             w.Box("Head house",new Vector3(-6,14,2.6f),new Vector3(6,28,7),concrete,silo);
             w.Box("Gallery",new Vector3(8,22.6f,2.6f),new Vector3(22,1.2f,3),concrete,silo);
             w.Sign("SILO",new Vector3(-6,24,-1.05f),.2f,silo,new Color(.2f,.22f,.25f));
-            var metal=w.Facade("Shed cladding",new Color(.55f,.6f,.62f),new Color(.3f,.34f,.36f),new Color(1,.8f,.5f),8,2,.25f,9);
+            var metal=w.Facade("Shed cladding","Corrugated","#8A9599",new Color(.35f,.38f,.4f),new Color(.3f,.36f,.4f),new Color(1,.8f,.5f),4,3.4f,.7f,.38f,.25f,RailWorld.WindowStyle.Industrial,9,.6f);
             foreach(float x in new[]{24f,128f})
             {
                 var shed=w.Group("Sklad",new Vector3(x,Ground,22));
                 w.Box("Shed",new Vector3(0,3.5f,0),new Vector3(32,7,12),metal,shed);
                 for(float i=-14;i<=14;i+=4)
-                {var tooth=w.Box("Sawtooth",new Vector3(i,7.6f,0),new Vector3(4.2f,.25f,12),w.Mat("Roof sheet","#5E6468",.4f,.4f),shed);tooth.localRotation=Quaternion.Euler(0,0,18);}
+                {var tooth=w.Box("Sawtooth",new Vector3(i,7.6f,0),new Vector3(4.2f,.25f,12),w.Painted("Roof sheet","Corrugated","#5E6468",.8f,.4f,.4f),shed);tooth.localRotation=Quaternion.Euler(0,0,18);}
             }
             string[] boxes={"#B5432E","#2F6C8F","#C99A2E","#3E7A4E","#7A4E8F","#D0D0C8"};
             for(float x=-8;x<w.Length;x+=Rand(rng,9,16))
@@ -283,7 +284,7 @@ namespace CeskeDrahy
                 for(int k=0;k<stack;k++)
                 {
                     int tint=rng.Next(boxes.Length);
-                    var c=w.Box("Kontejner",new Vector3(x,Ground+1.3f+k*2.6f,16+(k%2)*.2f),new Vector3(6.1f,2.6f,2.44f),w.Surfaced("Container "+tint,"Corrugated",boxes[tint],1.6f,.9f,.35f,.3f));
+                    var c=w.Box("Kontejner",new Vector3(x,Ground+1.3f+k*2.6f,16+(k%2)*.2f),new Vector3(6.1f,2.6f,2.44f),w.Painted("Container "+tint,"Corrugated",boxes[tint],.9f,.35f,.3f));
                     for(float r=-2.8f;r<=2.8f;r+=.5f)w.Box("Rib",new Vector3(r/6.1f,0,-.51f),new Vector3(.02f,.95f,.02f),w.dark,c);
                 }
             }
@@ -298,7 +299,7 @@ namespace CeskeDrahy
             {
                 var wagon=w.Group("Odstavený vagon",new Vector3(x,0,8));
                 int tint=rng.Next(4);
-                w.Box("Body",new Vector3(0,.6f,0),new Vector3(9,2.4f,2.4f),w.Surfaced("Container "+tint,"Corrugated",boxes[tint],1.6f,.9f,.35f,.3f),wagon);
+                w.Box("Body",new Vector3(0,.6f,0),new Vector3(9,2.4f,2.4f),w.Painted("Container "+tint,"Corrugated",boxes[tint],.9f,.35f,.3f),wagon);
                 w.Box("Frame",new Vector3(0,-.6f,0),new Vector3(9,.3f,2.2f),w.dark,wagon);
             }
         }
@@ -314,21 +315,22 @@ namespace CeskeDrahy
                 var panel=w.Box("Protihluková stěna",new Vector3(x,Ground+1.6f,11),new Vector3(3.95f,3.2f,.25f),w.Mat("Barrier "+panels[(int)(x+14)/4%4],panels[(int)(x+14)/4%4],smooth:.2f));
                 w.Box("Barrier post",new Vector3(-.5f,0,-.15f),new Vector3(.04f,1.02f,.4f),w.steel,panel);
             }
-            Color[] facades={new Color(.86f,.77f,.5f),new Color(.63f,.77f,.8f),new Color(.86f,.65f,.57f),new Color(.74f,.8f,.56f)};
+            string[] facades={"#DBC480","#A1C4CC","#DBA691","#BCCC8E"};
             int block=0;
             for(float x=4;x<w.Length;x+=Rand(rng,30,36),block++)
             {
-                var wall=w.Facade("Panelák "+block%4,facades[block%4],new Color(.18f,.22f,.28f),new Color(1,.82f,.48f),12,10,.35f,block%4+17);
+                var wall=w.Facade("Panelák "+block%4,"PanelConcrete",facades[block%4],new Color(.86f,.86f,.84f),new Color(.18f,.23f,.29f),new Color(1,.82f,.48f),2.4f,2.8f,.56f,.5f,.35f,RailWorld.WindowStyle.Panel,block%4+17,.5f);
                 float z=Rand(rng,26,34),height=Rand(rng,24,30);
                 w.Box("Panelový dům",new Vector3(x,Ground+height*.5f,z),new Vector3(26,height,11),wall);
-                w.Box("Roof parapet",new Vector3(x,Ground+height+.25f,z),new Vector3(26.4f,.5f,11.4f),w.Mat("Parapet","#6E6E6A"));
-                for(float i=-10;i<=10;i+=6.6f)w.Box("Stair core",new Vector3(x+i,Ground+height*.5f,z-5.6f),new Vector3(1.6f,height,.3f),w.Mat("Stair glass","#4E6A78",.3f,.7f));
+                w.Box("Roof parapet",new Vector3(x,Ground+height+.25f,z),new Vector3(26.4f,.5f,11.4f),w.Surfaced("Parapet","Concrete","#6E6E6A"));
+                var stairs=w.Facade("Stair core","PanelConcrete","#7D8A90",new Color(.8f,.82f,.82f),new Color(.24f,.33f,.4f),new Color(1,.85f,.55f),1.6f,2.8f,.72f,.62f,.45f,RailWorld.WindowStyle.Panel,23,.05f);
+                for(float i=-10;i<=10;i+=6.6f)w.Box("Stair core",new Vector3(x+i,Ground+height*.5f,z-5.6f),new Vector3(1.6f,height,.3f),stairs);
             }
             for(float x=-6;x<w.Length;x+=Rand(rng,10,15))
                 Tree(w,new Vector3(x,Ground,Rand(rng,15,19)),Rand(rng,6,8.5f),w.Leaves("Estate leaves","#456E40"),w.Mat("Bark","#5A4636"));
             for(float x=8;x<w.Length;x+=16)Lamp(w,new Vector3(x,Ground,13),true);
             var play=w.Group("Dětské hřiště",new Vector3(60,Ground,20));
-            w.Box("Sandpit",new Vector3(0,.15f,0),new Vector3(5,.3f,4),w.Mat("Sand","#D7C38E"),play);
+            w.Box("Sandpit",new Vector3(0,.15f,0),new Vector3(5,.3f,4),w.Surfaced("Sand","Ballast","#D7C38E"),play);
             var slide=w.Box("Slide",new Vector3(4,1.1f,0),new Vector3(3.5f,.15f,.8f),w.Mat("Slide red","#C8402E",.2f,.7f),play);slide.localRotation=Quaternion.Euler(0,0,-28);
             w.Box("Climbing tower",new Vector3(6,1.4f,0),new Vector3(1.4f,2.8f,1.4f),w.Mat("Play yellow","#E6B935"),play);
         }
@@ -350,13 +352,13 @@ namespace CeskeDrahy
             for(float x=-10;x<w.Length;x+=Rand(rng,9,14))
             {
                 var house=w.Group("Vesnický dům",new Vector3(x,Ground,62));
-                w.Box("Walls",new Vector3(0,2.2f,0),new Vector3(6.5f,4.4f,6),w.Mat("Village render","#E6DFCC",smooth:.15f),house);
-                var roof=w.Spire("Roof",new Vector3(0,4.4f,0),1,1,w.Surfaced("Village roof tiles","RoofTiles","#C0604C",1.6f,.8f,.2f),house);roof.localScale=new Vector3(7,2.8f,6.6f);
+                w.Box("Walls",new Vector3(0,2.2f,0),new Vector3(6.5f,4.4f,6),w.Surfaced("Village render","Plaster","#E6DFCC"),house);
+                var roof=w.Spire("Roof",new Vector3(0,4.4f,0),1,1,w.Surfaced("Village roof tiles","RoofTiles","#FFFFFF"),house);roof.localScale=new Vector3(7,2.8f,6.6f);
             }
             var chapel=w.Group("Kaple",new Vector3(92,Ground,58));
-            w.Box("Nave",new Vector3(0,3,0),new Vector3(8,6,6),w.Mat("Chapel white","#EEEAE0"),chapel);
-            w.Box("Tower",new Vector3(-4.5f,5,0),new Vector3(3,10,3),w.Mat("Chapel white","#EEEAE0"),chapel);
-            w.Spire("Tower roof",new Vector3(-4.5f,10,0),3.4f,4,w.Mat("Village roof","#A4483A"),chapel);
+            w.Box("Nave",new Vector3(0,3,0),new Vector3(8,6,6),w.Surfaced("Chapel white","Plaster","#EEEAE0"),chapel);
+            w.Box("Tower",new Vector3(-4.5f,5,0),new Vector3(3,10,3),w.Surfaced("Chapel white","Plaster","#EEEAE0"),chapel);
+            w.Spire("Tower roof",new Vector3(-4.5f,10,0),3.4f,4,w.Surfaced("Village roof tiles","RoofTiles"),chapel);
             var steel=w.Mat("Pylon steel","#8B949A",.6f,.4f);
             for(float x=0;x<w.Length;x+=42)
             {

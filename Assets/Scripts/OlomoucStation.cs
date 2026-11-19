@@ -7,7 +7,7 @@ namespace CeskeDrahy
         public static void Build(RailWorld w)
         {
             var root=w.Group("Olomouc hlavní nádraží / stylizovaná výpravní budova",new Vector3(13,0,14));
-            var brick=w.Surfaced("Station brick","StationBrick","#FFFFFF",3.4f,.67f,.2f);var stone=w.Mat("Station limestone","#D6C4A3");
+            var brick=w.Surfaced("Station brick","Brick");var stone=w.Surfaced("Station limestone","Plaster","#D6C4A3");
             var frame=w.Mat("Station bronze","#38515A",.5f,.4f);
             w.Box("Entrance hall",new Vector3(0,5.2f,0),new Vector3(24,12,5),brick,root);
             w.Box("West wing",new Vector3(-20,2.5f,1),new Vector3(16,6.5f,5),stone,root);
@@ -32,7 +32,7 @@ namespace CeskeDrahy
             for(int i=0;i<5;i++)foreach(int direction in new[]{-1,1})
             {var wing=w.Box("Emblem feather",new Vector3(direction*(.6f+i*.3f),12.75f+i*.12f,0),new Vector3(.65f,.18f,.45f),frame,root);wing.localRotation=Quaternion.Euler(0,0,direction*16);}
             // The tall RCO silhouette and a tram suggest the forecourt without literal map accuracy.
-            w.Box("RCO silhouette",new Vector3(43,11.5f,37),new Vector3(7,25,8),w.Mat("RCO facade","#9AACA6"));
+            w.Box("RCO silhouette",new Vector3(43,11.5f,37),new Vector3(7,25,8),w.Surfaced("RCO facade","PanelConcrete","#9AACA6"));
             for(int floor=0;floor<18;floor++)w.Box("RCO glazing",new Vector3(43,floor*1.2f+1,32.95f),new Vector3(6,.7f,.08f),w.glass);
             var tram=w.Group("Olomoucká tramvaj",new Vector3(-8,.9f,8));
             w.Box("Tram cream",Vector3.zero,new Vector3(10,2.3f,2),w.cream,tram);

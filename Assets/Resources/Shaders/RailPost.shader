@@ -25,6 +25,14 @@ Shader "Hidden/Railway/Post"
         half contribution = max(soft, brightness - _Threshold.x) / max(brightness, 1e-4);
         return c * contribution;
     }
+    // Karis average: each tap weighted by 1/(1+luma), so a single bright pixel (eye glint, glass) cannot flicker the bloom.
+    half3 KarisBox4(float2 uv)
+    {
+        float4 o = _MainTex_TexelSize.xyxy * float4(-1, -1, 1, 1);
+        half3 a = tex2D(_MainTex, uv + o.xy).rgb, b = tex2D(_MainTex, uv + o.zy).rgb, c = tex2D(_MainTex, uv + o.xw).rgb, d = tex2D(_MainTex, uv + o.zw).rgb;
+        half wa = 1 / (1 + Luminance(a)), wb = 1 / (1 + Luminance(b)), wc = 1 / (1 + Luminance(c)), wd = 1 / (1 + Luminance(d));
+        return (a * wa + b * wb + c * wc + d * wd) / (wa + wb + wc + wd);
+    }
     half3 Aces(half3 x) { return saturate((x * (2.51 * x + .03)) / (x * (2.43 * x + .59) + .14)); }
     ENDCG
     SubShader
@@ -35,7 +43,7 @@ Shader "Hidden/Railway/Post"
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-            half4 frag(v2f i) : SV_Target { return half4(Prefilter(min(Box4(i.uv, 1), 32)), 1); }
+            half4 frag(v2f i) : SV_Target { return half4(Prefilter(min(KarisBox4(i.uv), 32)), 1); }
             ENDCG
         }
         Pass // 1 downsample

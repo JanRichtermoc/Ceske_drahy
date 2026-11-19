@@ -18,12 +18,7 @@ public static class RailProject
         var so=new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/ProjectSettings.asset")[0]);
         // Input System only (1): keyboard + gamepad through RailInput; the legacy Input Manager is deprecated.
         var input=so.FindProperty("activeInputHandler");if(input!=null){input.intValue=1;so.ApplyModifiedPropertiesWithoutUndo();}
-        foreach(string file in System.IO.Directory.GetFiles("Assets/Resources/Textures"))
-        {
-            string path=file.Replace('\\','/');
-            if(path.EndsWith(".meta"))continue;
-            var ti=AssetImporter.GetAtPath(path) as TextureImporter;if(ti!=null){ti.maxTextureSize=1024;ti.textureCompression=TextureImporterCompression.Compressed;if(path.Contains("Normal"))ti.textureType=TextureImporterType.NormalMap;ti.SaveAndReimport();}
-        }
+        // Texture import settings come from RailAssetRules (AssetPostprocessor).
         AssetDatabase.SaveAssets();Debug.Log("RAILWAY_SCENE_READY");
     }
     /// <summary>Player settings shared by every platform build.</summary>
@@ -70,6 +65,7 @@ public static class RailProject
     {
         // Serialized template materials keep the runtime shaders and their instancing variants in player builds.
         Template("Assets/Resources/Surface.mat","Surface","Railway/Surface");
+        Template("Assets/Resources/SurfaceCutout.mat","SurfaceCutout","Railway/SurfaceCutout");
         Template("Assets/Resources/Foliage.mat","Foliage","Railway/Foliage");
         Template("Assets/Resources/Water.mat","Water","Railway/Water");
         if(AssetDatabase.LoadAssetAtPath<Material>("Assets/Resources/SurfaceNormal.mat"))AssetDatabase.DeleteAsset("Assets/Resources/SurfaceNormal.mat");

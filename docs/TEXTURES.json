@@ -1,0 +1,146 @@
+{
+  "Ballast": {
+    "slug": "rocks_ground_01",
+    "name": "Rocks Ground 01",
+    "tileMetres": 2.0,
+    "resolution": "1k",
+    "url": "https://polyhaven.com/a/rocks_ground_01",
+    "license": "CC0",
+    "meanLinear": 0.2246
+  },
+  "Paving": {
+    "slug": "large_square_pattern_01",
+    "name": "Large Square Pattern 01",
+    "tileMetres": 3.0,
+    "resolution": "2k",
+    "url": "https://polyhaven.com/a/large_square_pattern_01",
+    "license": "CC0",
+    "meanLinear": 0.1904
+  },
+  "Concrete": {
+    "slug": "brushed_concrete",
+    "name": "Brushed Concrete ",
+    "tileMetres": 2.5,
+    "resolution": "2k",
+    "url": "https://polyhaven.com/a/brushed_concrete",
+    "license": "CC0",
+    "meanLinear": 0.1275
+  },
+  "Asphalt": {
+    "slug": "asphalt_02",
+    "name": "Asphalt 02",
+    "tileMetres": 3.0,
+    "resolution": "2k",
+    "url": "https://polyhaven.com/a/asphalt_02",
+    "license": "CC0",
+    "meanLinear": 0.1021
+  },
+  "RailSteel": {
+    "slug": "rusty_metal_02",
+    "name": "Rusty Metal 02",
+    "tileMetres": 1.0,
+    "resolution": "1k",
+    "url": "https://polyhaven.com/a/rusty_metal_02",
+    "license": "CC0",
+    "meanLinear": 0.3026
+  },
+  "Brick": {
+    "slug": "red_brick_03",
+    "name": "Red Brick 03",
+    "tileMetres": 1.0,
+    "resolution": "1k",
+    "url": "https://polyhaven.com/a/red_brick_03",
+    "license": "CC0",
+    "meanLinear": 0.106
+  },
+  "Plaster": {
+    "slug": "painted_plaster_wall",
+    "name": "Painted Plaster Wall",
+    "tileMetres": 2.0,
+    "resolution": "1k",
+    "url": "https://polyhaven.com/a/painted_plaster_wall",
+    "license": "CC0",
+    "meanLinear": 0.3729
+  },
+  "PanelConcrete": {
+    "slug": "concrete_wall_008",
+    "name": "Concrete Wall 008",
+    "tileMetres": 2.71,
+    "resolution": "2k",
+    "url": "https://polyhaven.com/a/concrete_wall_008",
+    "license": "CC0",
+    "meanLinear": 0.2369
+  },
+  "RoofTiles": {
+    "slug": "clay_roof_tiles_02",
+    "name": "Clay Roof Tiles 02",
+    "tileMetres": 2.5,
+    "resolution": "2k",
+    "url": "https://polyhaven.com/a/clay_roof_tiles_02",
+    "license": "CC0",
+    "meanLinear": 0.1276
+  },
+  "Corrugated": {
+    "slug": "corrugated_iron_02",
+    "name": "Corrugated Iron 02",
+    "tileMetres": 2.7,
+    "resolution": "2k",
+    "url": "https://polyhaven.com/a/corrugated_iron_02",
+    "license": "CC0",
+    "meanLinear": 0.097
+  },
+  "MetalPlate": {
+    "slug": "metal_plate_02",
+    "name": "Metal Plate 02",
+    "tileMetres": 2.0,
+    "resolution": "1k",
+    "url": "https://polyhaven.com/a/metal_plate_02",
+    "license": "CC0",
+    "meanLinear": 0.0701
+  },
+  "TreadPlate": {
+    "slug": "metal_grate_rusty",
+    "name": "Metal Grate Rusty",
+    "tileMetres": 0.5,
+    "resolution": "1k",
+    "url": "https://polyhaven.com/a/metal_grate_rusty",
+    "license": "CC0",
+    "meanLinear": 0.1131
+  },
+  "Grass": {
+    "slug": "leafy_grass",
+    "name": "Leafy Grass",
+    "tileMetres": 2.0,
+    "resolution": "1k",
+    "url": "https://polyhaven.com/a/leafy_grass",
+    "license": "CC0",
+    "meanLinear": 0.2387
+  },
+  "Planks": {
+    "slug": "weathered_planks",
+    "name": "Weathered Planks",
+    "tileMetres": 2.0,
+    "resolution": "1k",
+    "url": "https://polyhaven.com/a/weathered_planks",
+    "license": "CC0",
+    "meanLinear": 0.0615
+  },
+  "SiloConcrete": {
+    "slug": "concrete_panels",
+    "name": "Concrete Panels",
+    "tileMetres": 8.0,
+    "resolution": "2k",
+    "url": "https://polyhaven.com/a/concrete_panels",
+    "license": "CC0",
+    "meanLinear": 0.2446
+  },
+  "CoachPaint": {
+    "slug": "blue_metal_plate",
+    "name": "Blue Metal Plate",
+    "tileMetres": 2.5,
+    "resolution": "2k",
+    "url": "https://polyhaven.com/a/blue_metal_plate",
+    "license": "CC0",
+    "meanLinear": 0.0455
+  }
+}

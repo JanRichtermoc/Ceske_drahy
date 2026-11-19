@@ -36,7 +36,7 @@ namespace CeskeDrahy
             material.SetVector("_Lift", grade.lift);
             material.SetVector("_Gain", grade.gain);
             material.SetVector("_Grade", new Vector4(grade.exposure, grade.contrast, grade.saturation, grade.bloom));
-            material.SetVector("_Vignette", new Vector4(grade.vignette, (float)source.width / source.height, .012f));
+            material.SetVector("_Vignette", new Vector4(grade.vignette, (float)source.width / source.height, .004f));
             var format = source.format;
             int width = source.width / 2, height = source.height / 2, count = 0;
             chain[count] = RenderTexture.GetTemporary(width, height, 0, format);
