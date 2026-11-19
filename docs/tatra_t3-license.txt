@@ -1,0 +1,11 @@
+Model Information:
+* title:	Tatra t3 (reworked)
+* source:	https://sketchfab.com/3d-models/tatra-t3-reworked-a932f7c3850643fd92dadad7f5771d6c
+* author:	Randonavt (https://sketchfab.com/Randonavt)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Tatra t3 (reworked)" (https://sketchfab.com/3d-models/tatra-t3-reworked-a932f7c3850643fd92dadad7f5771d6c) by Randonavt (https://sketchfab.com/Randonavt) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

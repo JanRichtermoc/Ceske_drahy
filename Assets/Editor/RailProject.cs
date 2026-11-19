@@ -17,9 +17,10 @@ public static class RailProject
         ConfigurePlayer();
         var so=new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/ProjectSettings.asset")[0]);
         var input=so.FindProperty("activeInputHandler");if(input!=null){input.intValue=0;so.ApplyModifiedPropertiesWithoutUndo();}
-        foreach(string file in System.IO.Directory.GetFiles("Assets/Resources/Textures","*.png"))
+        foreach(string file in System.IO.Directory.GetFiles("Assets/Resources/Textures"))
         {
             string path=file.Replace('\\','/');
+            if(path.EndsWith(".meta"))continue;
             var ti=AssetImporter.GetAtPath(path) as TextureImporter;if(ti!=null){ti.maxTextureSize=1024;ti.textureCompression=TextureImporterCompression.Compressed;if(path.Contains("Normal"))ti.textureType=TextureImporterType.NormalMap;ti.SaveAndReimport();}
         }
         AssetDatabase.SaveAssets();Debug.Log("RAILWAY_SCENE_READY");
@@ -50,18 +51,19 @@ public static class RailProject
     }
     public static void EnsureMaterials()
     {
-        // Serialized references preserve runtime-created Standard materials in player builds.
-        if(!AssetDatabase.LoadAssetAtPath<Material>("Assets/Resources/Surface.mat"))
-        {
-            var material=new Material(Shader.Find("Standard")){name="Surface",enableInstancing=true};
-            AssetDatabase.CreateAsset(material,"Assets/Resources/Surface.mat");
-        }
-        if(!AssetDatabase.LoadAssetAtPath<Material>("Assets/Resources/SurfaceNormal.mat"))
-        {
-            var normal=new Material(Shader.Find("Standard")){name="Surface Normal",enableInstancing=true};
-            normal.SetTexture("_BumpMap",Resources.Load<Texture2D>("Textures/RailBallastNormal"));normal.EnableKeyword("_NORMALMAP");
-            AssetDatabase.CreateAsset(normal,"Assets/Resources/SurfaceNormal.mat");
-        }
+        // Serialized template materials keep the runtime shaders and their instancing variants in player builds.
+        Template("Assets/Resources/Surface.mat","Surface","Railway/Surface");
+        Template("Assets/Resources/Foliage.mat","Foliage","Railway/Foliage");
+        Template("Assets/Resources/Water.mat","Water","Railway/Water");
+        if(AssetDatabase.LoadAssetAtPath<Material>("Assets/Resources/SurfaceNormal.mat"))AssetDatabase.DeleteAsset("Assets/Resources/SurfaceNormal.mat");
         AssetDatabase.SaveAssets();
+    }
+    static void Template(string path,string name,string shaderName)
+    {
+        var shader=Shader.Find(shaderName);
+        if(!shader)throw new System.InvalidOperationException("Missing shader "+shaderName);
+        var material=AssetDatabase.LoadAssetAtPath<Material>(path);
+        if(!material){material=new Material(shader){name=name,enableInstancing=true};AssetDatabase.CreateAsset(material,path);}
+        else if(material.shader!=shader){material.shader=shader;material.enableInstancing=true;EditorUtility.SetDirty(material);}
     }
 }

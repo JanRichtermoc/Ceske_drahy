@@ -12,7 +12,7 @@ public static class RailSmokeTests
     static void Tick(RailGame g,int count){for(int i=0;i<count;i++)g.Step(1f/120);}
     public static string Run()
     {
-        var g=UnityEngine.Object.FindFirstObjectByType<RailGame>();
+        var g=UnityEngine.Object.FindAnyObjectByType<RailGame>();
         Check(g!=null,"Run tests in Play Mode");
         var saved=SaveRecords();bool oldMuted=g.muted;var passed=new List<string>();
         g.enabled=false;g.muted=true;

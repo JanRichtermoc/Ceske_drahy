@@ -7,7 +7,7 @@ namespace CeskeDrahy
         public static void Build(RailWorld w)
         {
             var root=w.Group("Olomouc hlavní nádraží / stylizovaná výpravní budova",new Vector3(13,0,14));
-            var brick=w.Textured("Station brick","StationBrick",new Vector2(7,3.2f),.67f);var stone=w.Mat("Station limestone","#D6C4A3");
+            var brick=w.Surfaced("Station brick","StationBrick","#FFFFFF",3.4f,.67f,.2f);var stone=w.Mat("Station limestone","#D6C4A3");
             var frame=w.Mat("Station bronze","#38515A",.5f,.4f);
             w.Box("Entrance hall",new Vector3(0,5.2f,0),new Vector3(24,12,5),brick,root);
             w.Box("West wing",new Vector3(-20,2.5f,1),new Vector3(16,6.5f,5),stone,root);

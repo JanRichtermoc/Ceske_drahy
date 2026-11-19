@@ -40,6 +40,7 @@ namespace CeskeDrahy
         RailWorld.Platform standing;
         Vector3 cameraVelocity;
         CjRig playerRig;
+        RailPost post;
         float[] attackTimers;
         bool[] hasThrown;
         readonly Transform[] projectiles = new Transform[12];
@@ -55,6 +56,7 @@ namespace CeskeDrahy
             view.backgroundColor=new Color(.64f,.74f,.79f);view.clearFlags=CameraClearFlags.Skybox;
             view.transform.rotation=Quaternion.Euler(9,-10,0);view.transform.position=new Vector3(14,8,-23);
             view.gameObject.AddComponent<AudioListener>();
+            post=view.gameObject.AddComponent<RailPost>();post.Apply(world.Grading);
             muted=PlayerPrefs.GetInt("muted",0)==1;lowQuality=PlayerPrefs.GetInt("lowQuality",0)==1;reducedMotion=PlayerPrefs.GetInt("reducedMotion",0)==1;ApplyQuality();
             hitShoutVolume=Mathf.Clamp01(PlayerPrefs.GetFloat("hitShoutVolume",.94f));
             audioMix=gameObject.AddComponent<RailAudio>();
@@ -68,6 +70,7 @@ namespace CeskeDrahy
             LevelIndex=index;
             world=new RailWorld();
             world.Build(index);
+            if(post)post.Apply(world.Grading);
             playerRig=new CjRig(world);
             hero=playerRig.Root;
             attackTimers=new float[world.inspectors.Count];
@@ -97,7 +100,7 @@ namespace CeskeDrahy
         public void Boing(){audioMix.Spring();}
         public void Celebrate(){audioMix.Celebrate();}
         public void Launch(float power){velocity.y=power;grounded=false;standing=null;coyote=0;jumpBuffer=0;jumpCut=false;chaos.airJumpReady=true;}
-        public void ApplyQuality(){QualitySettings.shadows=lowQuality?ShadowQuality.Disable:ShadowQuality.All;QualitySettings.antiAliasing=lowQuality?0:4;}
+        public void ApplyQuality(){QualitySettings.shadows=lowQuality?ShadowQuality.Disable:ShadowQuality.All;QualitySettings.antiAliasing=lowQuality?0:4;if(post)post.enabled=!lowQuality;}
         public void SaveSettings(){PlayerPrefs.SetInt("muted",muted?1:0);PlayerPrefs.SetInt("lowQuality",lowQuality?1:0);PlayerPrefs.SetInt("reducedMotion",reducedMotion?1:0);PlayerPrefs.SetFloat("hitShoutVolume",hitShoutVolume);PlayerPrefs.Save();ApplyQuality();}
         public void ToggleFullscreen(){Screen.fullScreenMode=Screen.fullScreen?FullScreenMode.Windowed:FullScreenMode.FullScreenWindow;}
         public void Quit()
@@ -122,6 +125,7 @@ namespace CeskeDrahy
             bestTime=PlayerPrefs.GetFloat(Level.TimeKey,0);bestScore=PlayerPrefs.GetInt(Level.ScoreKey,0);
             audioMix.ResetRun();chaos.Reset();playerRig.Reset();hero.localScale=Vector3.one;hero.gameObject.SetActive(true);
             for(int i=0;i<world.tickets.Count;i++)world.tickets[i].gameObject.SetActive(true);
+            world.ResetSignals();
             ClearProjectiles();
             for(int i=0;i<attackTimers.Length;i++){attackTimers[i]=i*.6f;hasThrown[i]=false;}
             Notice(Level.Intro);
@@ -234,6 +238,7 @@ namespace CeskeDrahy
             if(grounded && checkpoint<Level.CheckpointCount && standing==world.platforms[Level.Stations[checkpoint+1]])
             {
                 checkpoint++;
+                world.SetSignal(checkpoint-1,true);
                 lives=Mathf.Max(lives,2);
                 Notice("CHECKPOINT  "+checkpoint+" / "+Level.CheckpointCount);
                 Celebrate();

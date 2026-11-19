@@ -29,6 +29,11 @@ namespace CeskeDrahy
         readonly List<Transform> windStreaks = new List<Transform>();
         Material ballast;
         Mesh pyramid;
+        readonly Dictionary<string,GameObject> props=new Dictionary<string,GameObject>();
+        sealed class Mover{public Transform body;public float from,span,speed,phase;}
+        readonly List<Mover> movers=new List<Mover>();
+        /// <summary>Red and green aspect of the signal at each checkpoint station.</summary>
+        readonly List<GameObject[]> checkpointSignals=new List<GameObject[]>();
         /// <summary>World extent along the track, from the start buffer to past the finish gate.</summary>
         public float Length => Level.Finish+30;
         readonly List<SteamVent> vents = new List<SteamVent>();
@@ -56,14 +61,15 @@ namespace CeskeDrahy
             visual.gameObject.AddComponent<MeshRenderer>().sharedMaterial=material;
             generatedMeshes.Add(mesh);
         }
-        public Material Textured(string name,string source,Vector2 tiling,float bump)
+        /// <summary>PBR texture projected in world metres (tile = metres per repeat), tinted by hex.</summary>
+        public Material Surfaced(string name,string source,string hex,float tile,float bump=.6f,float smooth=.25f,float metal=0)
         {
-            var material=Mat(name,"#FFFFFF",smooth:.21f);
+            if(mats.TryGetValue(name,out var existing))return existing;
+            var material=Mat(name,hex,metal,smooth);
             material.mainTexture=Resources.Load<Texture2D>("Textures/"+source);
-            material.mainTextureScale=tiling;
             material.SetTexture("_BumpMap",Resources.Load<Texture2D>("Textures/"+source+"Normal"));
             material.SetFloat("_BumpScale",bump);
-            material.EnableKeyword("_NORMALMAP");
+            material.SetFloat("_Triplanar",1);material.SetFloat("_TriScale",1/tile);
             return material;
         }
         public Platform PlatformAt(float x)=>platforms.Find(v=>x>=v.x-v.width*.5f && x<=v.x+v.width*.5f);
@@ -99,6 +105,25 @@ namespace CeskeDrahy
             if(!template)throw new System.InvalidOperationException("Missing Surface material. Run České dráhy / Prepare game scene.");
             var m = new Material(template) { name = name, color = color, enableInstancing = true };
             m.SetFloat("_Metallic", metal); m.SetFloat("_Glossiness", smooth); mats[name] = m;
+            return m;
+        }
+        Material FromTemplate(string template,string name,string hex)
+        {
+            if(mats.TryGetValue(name,out var existing))return existing;
+            ColorUtility.TryParseHtmlString(hex,out var color);
+            var source=Resources.Load<Material>(template);
+            var m=source?new Material(source){name=name,color=color,enableInstancing=true}:Mat(name+" fallback",hex);
+            mats[name]=m;return m;
+        }
+        /// <summary>Wind-swayed tree crown material.</summary>
+        public Material Leaves(string name,string hex)=>FromTemplate("Foliage",name,hex);
+        Material Sleepers()=>Surfaced("Concrete sleepers","Concrete","#6F6A63",1.2f,.5f,.1f);
+        public Material Water(string name,string hex)=>FromTemplate("Water",name,hex);
+        /// <summary>Self-lit surface (lamps, lit windows) that the bloom picks up.</summary>
+        public Material Glow(string name,string hex,float intensity)
+        {
+            var m=Mat(name,hex);
+            m.SetColor("_EmissionColor",m.color*intensity);
             return m;
         }
         public Transform Box(string name, Vector3 pos, Vector3 size, Material material, Transform parent = null, PrimitiveType type = PrimitiveType.Cube)
@@ -144,10 +169,8 @@ namespace CeskeDrahy
             dark=Mat("Rubber and sleepers","#263137"); gold=Mat("Safety amber","#F4B651",.3f,.55f);
             skin=Mat("Warm skin","#A56D49"); rust=Mat("Terracotta","#9C6150"); glass=Mat("Smoky windows","#173F53",.5f,.8f);
             green=Mat("Leaves","#4E715C");
-            ballast=Mat("Sketchfab railway scan","#C2B9A3");
-            ballast.mainTexture=Resources.Load<Texture2D>("Textures/RailBallast"); ballast.mainTextureScale=new Vector2(40,2);
-            ballast.SetTexture("_BumpMap",Resources.Load<Texture2D>("Textures/RailBallastNormal"));ballast.SetFloat("_BumpScale",.35f);ballast.EnableKeyword("_NORMALMAP");
-            var paving=Textured("Rail forecourt paving","CrackedConcrete",new Vector2(45,9),.24f);
+            ballast=Surfaced("Sketchfab railway scan","RailBallast","#C2B9A3",2.6f,.45f,.15f);
+            var paving=Surfaced("Rail forecourt paving","CrackedConcrete","#FFFFFF",5,.3f,.2f);
             // A river cuts the ground; everything else runs the full route length.
             var spans=Level.River==Vector2.zero?new[]{new Vector2(-18,Length)}:new[]{new Vector2(-18,Level.River.x),new Vector2(Level.River.y,Length)};
             foreach(var span in spans)
@@ -161,7 +184,7 @@ namespace CeskeDrahy
             {
                 float z=track*4;
                 for(int side=-1;side<=1;side+=2) Box("Rail",new Vector3((Length-18)*.5f,-.77f,z+side*.8f),new Vector3(Length+18,.13f,.09f),steel);
-                for(int i=-8;i<Length;i+=2) Box("Sleeper",new Vector3(i,-.91f,z),new Vector3(.25f,.16f,2.4f),dark);
+                for(int i=-8;i<Length;i+=2) Box("Sleeper",new Vector3(i,-.91f,z),new Vector3(.25f,.16f,2.4f),Sleepers());
             }
             int station=0;
             for(int i=0;i<Level.Platforms.Length;i++)
@@ -169,7 +192,7 @@ namespace CeskeDrahy
                 Vector4 p=Level.Platforms[i];
                 switch(Level.Kinds[i])
                 {
-                    case 'S':PlatformStation(p.x,p.y,p.z,station==0?Level.Name:station==Level.Stations.Length-1?Level.Zones[station]:station.ToString("00")+" / "+Level.Zones[station]);station++;break;
+                    case 'S':PlatformStation(p.x,p.y,p.z,station==0?Level.Name:station==Level.Stations.Length-1?Level.Zones[station]:station.ToString("00")+" / "+Level.Zones[station],station>0&&station<Level.Stations.Length-1);station++;break;
                     case 'C':Cargo(p.x,p.y,p.z,p.w,i);break;
                     case 'H':Tank(p.x,p.y,p.z,p.w,i);break;
                     default:Train(p.x,p.y,p.z,(i-1)%4==0?0:(i-1)%4==1?1:2,p.w);break;
@@ -214,24 +237,35 @@ namespace CeskeDrahy
         sealed class Lighting
         {
             public Color horizon,zenith,sun,fill,ambientSky,ambientEquator,fog;
-            public float sunStrength,sunPitch,sunIntensity,fillIntensity,fogEnd;
+            public float sunStrength,sunPitch,sunIntensity,fillIntensity,fogEnd,sunHeight=.21f,clouds=.4f,stars,rim=.35f;
+            public RailGrade grade;
         }
+        static RailGrade Grade(float exposure,float saturation,float bloom,float threshold,float vignette,Color lift,Color gain)=>
+            new RailGrade{exposure=exposure,contrast=1.05f,saturation=saturation,bloom=bloom,threshold=threshold,vignette=vignette,lift=lift,gain=gain};
+        /// <summary>Colour grade of the current route, applied by the camera's RailPost.</summary>
+        public RailGrade Grading { get; private set; }
         static Lighting Preset(Sky sky)
         {
             switch(sky)
             {
                 case Sky.Day:return new Lighting{horizon=new Color(.72f,.83f,.92f),zenith=new Color(.27f,.5f,.8f),sunStrength=1,sunPitch=50,sun=new Color(1,.95f,.86f),sunIntensity=1.25f,
-                    fill=new Color(.6f,.75f,1),fillIntensity=.25f,ambientSky=new Color(.58f,.68f,.8f),ambientEquator=new Color(.52f,.56f,.58f),fog=new Color(.72f,.8f,.88f),fogEnd=120};
+                    fill=new Color(.6f,.75f,1),fillIntensity=.25f,ambientSky=new Color(.58f,.68f,.8f),ambientEquator=new Color(.52f,.56f,.58f),fog=new Color(.72f,.8f,.88f),fogEnd=120,
+                    sunHeight=.55f,clouds=.45f,grade=Grade(1.12f,1.08f,.35f,1.1f,.22f,new Color(0,.01f,.02f),Color.white)};
                 case Sky.Dusk:return new Lighting{horizon=new Color(.85f,.5f,.38f),zenith=new Color(.2f,.27f,.45f),sunStrength=.8f,sunPitch=18,sun=new Color(1,.62f,.42f),sunIntensity=1,
-                    fill=new Color(.5f,.6f,1),fillIntensity=.35f,ambientSky=new Color(.42f,.44f,.6f),ambientEquator=new Color(.45f,.38f,.4f),fog=new Color(.58f,.5f,.55f),fogEnd=95};
+                    fill=new Color(.5f,.6f,1),fillIntensity=.35f,ambientSky=new Color(.42f,.44f,.6f),ambientEquator=new Color(.45f,.38f,.4f),fog=new Color(.58f,.5f,.55f),fogEnd=95,
+                    sunHeight=.12f,clouds=.55f,rim=.45f,grade=Grade(1.15f,1.05f,.6f,.95f,.3f,new Color(.03f,0,.03f),new Color(1.06f,.95f,.92f))};
                 case Sky.Sunset:return new Lighting{horizon=new Color(.98f,.52f,.22f),zenith=new Color(.25f,.32f,.55f),sunStrength=1.4f,sunPitch=10,sun=new Color(1,.58f,.3f),sunIntensity=1.15f,
-                    fill=new Color(.45f,.55f,1),fillIntensity=.3f,ambientSky=new Color(.5f,.48f,.58f),ambientEquator=new Color(.6f,.45f,.38f),fog=new Color(.8f,.55f,.42f),fogEnd=100};
+                    fill=new Color(.45f,.55f,1),fillIntensity=.3f,ambientSky=new Color(.5f,.48f,.58f),ambientEquator=new Color(.6f,.45f,.38f),fog=new Color(.8f,.55f,.42f),fogEnd=100,
+                    sunHeight=.07f,clouds=.5f,rim=.5f,grade=Grade(1.12f,1.1f,.7f,.9f,.3f,new Color(.03f,.01f,0),new Color(1.08f,.96f,.86f))};
                 case Sky.Evening:return new Lighting{horizon=new Color(.36f,.33f,.5f),zenith=new Color(.06f,.09f,.22f),sunStrength=.25f,sunPitch=25,sun=new Color(.85f,.75f,.9f),sunIntensity=.7f,
-                    fill=new Color(1,.6f,.4f),fillIntensity=.45f,ambientSky=new Color(.3f,.33f,.48f),ambientEquator=new Color(.32f,.3f,.38f),fog=new Color(.3f,.3f,.42f),fogEnd=85};
+                    fill=new Color(1,.6f,.4f),fillIntensity=.45f,ambientSky=new Color(.3f,.33f,.48f),ambientEquator=new Color(.32f,.3f,.38f),fog=new Color(.3f,.3f,.42f),fogEnd=85,
+                    sunHeight=.04f,clouds=.35f,stars=.4f,rim=.55f,grade=Grade(1.2f,1,.55f,.95f,.34f,new Color(0,.01f,.04f),new Color(.98f,.98f,1.05f))};
                 case Sky.Night:return new Lighting{horizon=new Color(.13f,.22f,.34f),zenith=new Color(.018f,.045f,.13f),sunStrength=.09f,sunPitch=43,sun=new Color(.65f,.8f,1),sunIntensity=.88f,
-                    fill=new Color(1,.56f,.34f),fillIntensity=.53f,ambientSky=new Color(.28f,.36f,.51f),ambientEquator=new Color(.25f,.3f,.42f),fog=new Color(.23f,.32f,.48f),fogEnd=76};
+                    fill=new Color(1,.56f,.34f),fillIntensity=.53f,ambientSky=new Color(.28f,.36f,.51f),ambientEquator=new Color(.25f,.3f,.42f),fog=new Color(.23f,.32f,.48f),fogEnd=76,
+                    sunHeight=.3f,clouds=.2f,stars=1,rim=.6f,grade=Grade(1.22f,.95f,.5f,1.05f,.38f,new Color(0,.015f,.05f),new Color(.95f,1,1.08f))};
                 default:return new Lighting{horizon=new Color(.78f,.68f,.51f),zenith=new Color(.24f,.44f,.56f),sunStrength=1,sunPitch=32,sun=new Color(1,.82f,.64f),sunIntensity=1.2f,
-                    fill=new Color(.61f,.79f,1),fillIntensity=.25f,ambientSky=new Color(.53f,.62f,.72f),ambientEquator=new Color(.47f,.51f,.52f),fog=new Color(.66f,.69f,.72f),fogEnd=105};
+                    fill=new Color(.61f,.79f,1),fillIntensity=.25f,ambientSky=new Color(.53f,.62f,.72f),ambientEquator=new Color(.47f,.51f,.52f),fog=new Color(.66f,.69f,.72f),fogEnd=105,
+                    grade=Grade(1.1f,1.06f,.45f,1,.26f,new Color(.02f,.01f,0),new Color(1.04f,1,.94f))};
             }
         }
         void SetupLight(Sky sky)
@@ -241,7 +275,13 @@ namespace CeskeDrahy
             skybox.SetVector("_Horizon",preset.horizon);
             skybox.SetVector("_Zenith",preset.zenith);
             skybox.SetFloat("_SunStrength",preset.sunStrength);
+            skybox.SetVector("_SunDir",new Vector4(.5f,preset.sunHeight,.8f,0));
+            skybox.SetFloat("_Clouds",preset.clouds);
+            skybox.SetFloat("_Stars",preset.stars);
             RenderSettings.skybox=skybox;
+            Shader.SetGlobalVector("_RailRim",new Vector4(preset.fill.r,preset.fill.g,preset.fill.b,preset.rim));
+            Shader.SetGlobalVector("_RailSkyHorizon",preset.horizon);
+            Grading=preset.grade;
             var sun=Group("Main light",Vector3.zero).gameObject.AddComponent<Light>();
             sun.type=LightType.Directional;
             sun.transform.rotation=Quaternion.Euler(preset.sunPitch,-35,0);
@@ -264,7 +304,7 @@ namespace CeskeDrahy
         void Cargo(float x,float width,float top,float travel,int index)
         {
             var wagon=Group("Nákladní vagon",new Vector3(x,0,0));
-            var paint=Mat("Cargo paint "+index%3,index%3==0?"#316876":index%3==1?"#934D3F":"#506847",.28f,.4f);
+            var paint=Surfaced("Cargo paint "+index%3,"Corrugated",index%3==0?"#3F7F8F":index%3==1?"#A8584A":"#62805A",1.6f,.9f,.4f,.3f);
             Box("Container",new Vector3(0,top-1.03f,0),new Vector3(width,2,2.34f),paint,wagon);
             Box("Roof rail",new Vector3(0,top-.045f,-1.18f),new Vector3(width,.09f,.07f),steel,wagon);
             for(float i=-width*.5f+.25f;i<width*.5f;i+=.48f)
@@ -283,13 +323,13 @@ namespace CeskeDrahy
         void Tank(float x,float width,float top,float travel,int index)
         {
             var wagon=Group("Cisterna",new Vector3(x,0,0));
-            var paint=Mat("Tank paint "+index%2,index%2==0?"#2C3136":"#BDB7A6",.45f,.55f);
+            var paint=Surfaced("Tank paint "+index%2,"PaintedMetal",index%2==0?"#3A4046":"#D0CABA",2.2f,.5f,.55f,.45f);
             float length=width-1;
             var shell=Box("Tank shell",new Vector3(0,top-1.2f,0),new Vector3(2.1f,length*.5f,2.1f),paint,wagon,PrimitiveType.Cylinder);
             shell.localRotation=Quaternion.Euler(0,0,90);
             for(int side=-1;side<=1;side+=2)Box("Tank end",new Vector3(side*length*.5f,top-1.2f,0),new Vector3(.7f,2.1f,2.1f),paint,wagon,PrimitiveType.Sphere);
             Box("Dome",new Vector3(0,top-.2f,0),new Vector3(.9f,.25f,.9f),paint,wagon,PrimitiveType.Cylinder);
-            Box("Walkway grating",new Vector3(0,top-.06f,0),new Vector3(width-.3f,.12f,1.05f),dark,wagon);
+            Box("Walkway grating",new Vector3(0,top-.06f,0),new Vector3(width-.3f,.12f,1.05f),Surfaced("Walkway plates","MetalPlates","#5B646A",1,.7f,.4f,.5f),wagon);
             for(int side=-1;side<=1;side+=2)Box("Handrail",new Vector3(0,top+.5f,side*.55f),new Vector3(width-.6f,.05f,.05f),gold,wagon);
             for(float i=-width*.5f+.6f;i<width*.5f;i+=1.6f)Box("Handrail post",new Vector3(i,top+.25f,.55f),new Vector3(.05f,.5f,.05f),gold,wagon);
             Box("Hazard plate",new Vector3(length*.25f,top-1.25f,-1.07f),new Vector3(.75f,.5f,.03f),gold,wagon);
@@ -317,13 +357,14 @@ namespace CeskeDrahy
             }
             else
             {
-                var pier=Mat("Track pier","#657480");
-                Box("Viaduct deck",new Vector3(0,railTop-.32f,0),new Vector3(length,.24f,2.8f),pier,g);
-                for(int side=-1;side<=1;side+=2)Box("Plate girder",new Vector3(0,railTop-.62f,side*1.25f),new Vector3(length,.5f,.16f),steel,g);
+                var pier=Surfaced("Track pier","Concrete","#8A96A0",3,.5f,.15f);
+                var plates=Surfaced("Viaduct plates","MetalPlates","#7E8C94",2,.6f,.45f,.5f);
+                Box("Viaduct deck",new Vector3(0,railTop-.32f,0),new Vector3(length,.24f,2.8f),plates,g);
+                for(int side=-1;side<=1;side+=2)Box("Plate girder",new Vector3(0,railTop-.62f,side*1.25f),new Vector3(length,.5f,.16f),plates,g);
                 for(int side=-1;side<=1;side+=2)
                     Box("Viaduct pillar",new Vector3(side*length*.3f,(railTop-1.85f)*.5f,0),new Vector3(.7f,railTop-.8f+1.05f,1.9f),pier,g);
             }
-            for(float i=-length*.5f+.3f;i<length*.5f;i+=.9f)Box("Sleeper",new Vector3(i,railTop-.16f,0),new Vector3(.25f,.12f,2.4f),dark,g);
+            for(float i=-length*.5f+.3f;i<length*.5f;i+=.9f)Box("Sleeper",new Vector3(i,railTop-.16f,0),new Vector3(.25f,.12f,2.4f),Sleepers(),g);
             for(int side=-1;side<=1;side+=2)Box("Rail",new Vector3(0,railTop-.065f,side*.8f),new Vector3(length,.13f,.09f),steel,g);
         }
         void CreateVent(Platform p,int phase)
@@ -344,9 +385,9 @@ namespace CeskeDrahy
         }
         public void IndustrialBackdrop(bool night)
         {
-            var brick=Textured("Depot scanned masonry","StationBrick",new Vector2(6,2.1f),.65f);
-            var warm=Mat("Floodlit window","#FFBB66");
-            var glow=SoftSprite("Floodlight glow",new Color(1,.59f,.25f,night?.40f:.17f),false);
+            var brick=Surfaced("Depot scanned masonry","StationBrick","#FFFFFF",3.2f,.65f,.2f);
+            var warm=night?Glow("Floodlit window","#FFBB66",.9f):Mat("Floodlit window","#FFBB66");
+            var glow=SoftSprite("Floodlight glow",new Color(1,.59f,.25f,night?.22f:.12f),false);
             for(int x=10;x<Length-10;x+=32)
             {
                 float h=night?9:11;
@@ -363,10 +404,10 @@ namespace CeskeDrahy
                 Box("Diffused floodlight",new Vector3(x+11.5f,9.35f,4.42f),new Vector3(3.9f,3,1),glow,null,PrimitiveType.Quad);
             }
         }
-        void PlatformStation(float x,float width,float top,string label)
+        void PlatformStation(float x,float width,float top,string label,bool checkpoint)
         {
             var g=Group("Nástupiště",new Vector3(x,0,0));
-            Box("Concrete",new Vector3(0,top-.55f,0),new Vector3(width,1.1f,3.1f),Textured("Concrete platform scan","CrackedConcrete",new Vector2(4,.8f),.32f),g);
+            Box("Concrete",new Vector3(0,top-.55f,0),new Vector3(width,1.1f,3.1f),Surfaced("Concrete platform scan","CrackedConcrete","#FFFFFF",3.5f,.35f,.2f),g);
             Box("Yellow edge",new Vector3(0,top+.015f,-1.4f),new Vector3(width,.04f,.12f),gold,g);
             for(float i=-width/2;i<width/2;i+=.8f)Box("Edge marking",new Vector3(i,top-.16f,-1.57f),new Vector3(.4f,.15f,.035f),cream,g);
             Box("Station sign",new Vector3(0,top+3.6f,2),new Vector3(7,.85f,.16f),navy,g);
@@ -374,6 +415,26 @@ namespace CeskeDrahy
             foreach(float i in new[]{-3.2f,3.2f})Box("Sign post",new Vector3(i,top+1.8f,2),new Vector3(.1f,3.6f,.1f),steel,g);
             platforms.Add(new Platform{x=x,width=width,top=top,root=g});
             if(x>0){Box("Checkpoint lamp",new Vector3(-width/2+1,top+1.2f,1),new Vector3(.15f,2.4f,.15f),gold,g);}
+            Prop("bench",new Vector3(-width*.28f,top,1.05f),180,g);
+            if(width>11)Prop("bench",new Vector3(width*.12f,top,1.05f),180,g);
+            var lamp=Prop("lamp",new Vector3(width*.36f,top,1.15f),90,g,.9f);
+            if(lamp && (Level.Sky==Sky.Evening||Level.Sky==Sky.Night||Level.Sky==Sky.Dusk))
+                Box("Lamp glow",new Vector3(width*.36f-.35f,top+3.55f,.7f),new Vector3(2.4f,2.4f,1),SoftSprite("Platform lamp glow",new Color(1,.8f,.5f,.3f),false),g,PrimitiveType.Quad);
+            if(checkpoint)
+            {
+                // Light signal: shows "Stůj" until the checkpoint is reached, then "Volno".
+                var signal=Group("Návěstidlo",new Vector3(width*.5f-.5f,top,1.9f),g);
+                var mastGrey=Mat("Signal mast","#8A9095",.5f,.4f);
+                Cylinder("Mast",new Vector3(0,1.8f,0),.16f,3.6f,mastGrey,signal);
+                Box("Head",new Vector3(0,3.35f,-.05f),new Vector3(.46f,.95f,.22f),dark,signal);
+                Box("Backplate",new Vector3(0,3.35f,.04f),new Vector3(.7f,1.15f,.04f),Mat("Signal backplate","#1B1F22"),signal);
+                for(int stripe=0;stripe<4;stripe++)Box("Mast stripe",new Vector3(0,.4f+stripe*.5f,0),new Vector3(.18f,.22f,.18f),stripe%2==0?cream:Mat("Signal red paint","#B8342C"),signal,PrimitiveType.Cylinder);
+                foreach(float y in new[]{3.58f,3.12f})Box("Hood",new Vector3(0,y+.13f,-.2f),new Vector3(.3f,.04f,.18f),dark,signal);
+                var red=Box("Stůj",new Vector3(0,3.58f,-.17f),new Vector3(.22f,.22f,.06f),Glow("Signal red","#FF3B30",4),signal,PrimitiveType.Sphere);
+                var green=Box("Volno",new Vector3(0,3.12f,-.17f),new Vector3(.22f,.22f,.06f),Glow("Signal green","#38FF74",4),signal,PrimitiveType.Sphere);
+                checkpointSignals.Add(new[]{red.gameObject,green.gameObject});
+                green.gameObject.SetActive(false);
+            }
         }
         void Train(float x,float width,float top,int variant,float moving=0)
         {
@@ -385,7 +446,7 @@ namespace CeskeDrahy
                 return;
             }
             RaisedTrack(x,width,moving,top-2.52f);
-            Material body=variant==2?rust:blue;
+            Material body=variant==2?Mat("Coach red","#A35A49",.3f,.6f):Mat("Coach blue","#2C77A6",.35f,.62f);
             Box("Body",new Vector3(0,top-1.02f,0),new Vector3(width,1.8f,2.15f),body,g);
             Box("Roof base",new Vector3(0,top-.24f,0),new Vector3(width+.15f,.1f,2.25f),steel,g);
             Roof("Arched roof",new Vector3(0,top-.21f,0),width+.15f,2.25f,steel,g);
@@ -485,7 +546,7 @@ namespace CeskeDrahy
             {
                 if(i<44)continue;
                 Box("Tree trunk",new Vector3(i,1.7f,10),new Vector3(.35f,5,.35f),rust);
-                for(int n=0;n<4;n++)Box("Tree crown",new Vector3(i+Mathf.Sin(n*2)*1.1f,3.4f+n*.45f,10+Mathf.Cos(n*2)*.65f),new Vector3(2.6f,3.2f,2.5f),green,null,PrimitiveType.Sphere);
+                for(int n=0;n<4;n++)Box("Tree crown",new Vector3(i+Mathf.Sin(n*2)*1.1f,3.4f+n*.45f,10+Mathf.Cos(n*2)*.65f),new Vector3(2.6f,3.2f,2.5f),Leaves("Station leaves","#4E715C"),null,PrimitiveType.Sphere);
             }
             // Backdrop trains create depth without adding gameplay collisions.
             for(int i=12;i<Length-30;i+=28)
@@ -529,20 +590,47 @@ namespace CeskeDrahy
             var rng=new System.Random(seed);var pixels=new Color32[texture.width*texture.height];
             for(int row=0;row<rows;row++)for(int col=0;col<columns;col++)
             {
-                Color glass=rng.NextDouble()<litRatio?lit:window*(.8f+(float)rng.NextDouble()*.4f);
+                bool on=rng.NextDouble()<litRatio;
+                Color glass=on?lit:window*(.8f+(float)rng.NextDouble()*.4f);
                 for(int y=0;y<cell;y++)for(int x=0;x<cell;x++)
                 {
                     bool inWindow=x>5&&x<cell-5&&y>7&&y<cell-5;
                     bool sill=y>=4&&y<=7&&x>3&&x<cell-3;
                     Color c=inWindow?glass:sill?wall*.82f:wall*(.96f+((x*7+y*13)%5)*.01f);
-                    if(inWindow&&(x==cell/2))c=wall*.9f;
+                    if(inWindow&&x==cell/2)c=wall*.9f;
                     pixels[(row*cell+y)*texture.width+col*cell+x]=c;
                 }
             }
             texture.SetPixels32(pixels);texture.Apply(true,true);generatedTextures.Add(texture);
             var material=Mat(name,"#FFFFFF",smooth:.18f);material.mainTexture=texture;
+            if(litRatio>.15f)
+            {
+                // Lit windows only: the emission map glows after dark.
+                var glow=new Texture2D(texture.width,texture.height,TextureFormat.RGBA32,true){name=name+" glow",wrapMode=TextureWrapMode.Repeat};
+                var emissive=new Color32[pixels.Length];Color32 litColor=lit;
+                for(int i=0;i<pixels.Length;i++)emissive[i]=pixels[i].Equals(litColor)?pixels[i]:new Color32(0,0,0,255);
+                glow.SetPixels32(emissive);glow.Apply(true,true);generatedTextures.Add(glow);
+                material.SetTexture("_EmissionMap",glow);material.SetFloat("_EmissionStrength",.85f);
+            }
             return material;
         }
+        /// <summary>Instantiates a Sketchfab model from Resources/Models/Props (null when missing).</summary>
+        public Transform Prop(string name,Vector3 position,float yaw,Transform parent=null,float scale=1)
+        {
+            if(!props.TryGetValue(name,out var prefab)){prefab=Resources.Load<GameObject>("Models/Props/"+name);props[name]=prefab;}
+            if(!prefab)return null;
+            var t=Object.Instantiate(prefab,parent?parent:root,false).transform;
+            t.name=name+" / Sketchfab CC BY";t.localPosition=position;t.localRotation=Quaternion.Euler(0,yaw,0);t.localScale=Vector3.one*scale;
+            return t;
+        }
+        /// <summary>Background traffic that loops along x; purely visual.</summary>
+        public void AddMover(Transform body,float from,float to,float speed,float phase){if(body)movers.Add(new Mover{body=body,from=from,span=to-from,speed=speed,phase=phase});}
+        public void SetSignal(int checkpoint,bool clear)
+        {
+            if(checkpoint<0||checkpoint>=checkpointSignals.Count)return;
+            checkpointSignals[checkpoint][0].SetActive(!clear);checkpointSignals[checkpoint][1].SetActive(clear);
+        }
+        public void ResetSignals(){for(int i=0;i<checkpointSignals.Count;i++)SetSignal(i,false);}
         public void AddWindProp(Transform prop)=>windProps.Add(prop);
         public void AddWindStreak(Transform streak)=>windStreaks.Add(streak);
         /// <summary>Flags lean and streaks blow while the gust pushes; purely visual.</summary>
@@ -569,6 +657,7 @@ namespace CeskeDrahy
         }
         public void Tick(float time,float dt)
         {
+            foreach(var m in movers){var p=m.body.position;m.body.position=new Vector3(m.from+Mathf.Repeat(time*m.speed+m.phase,m.span),p.y,p.z);}
             foreach(var vent in vents)
             {
                 float phase=(time+vent.Phase)%Level.VentPeriod;
