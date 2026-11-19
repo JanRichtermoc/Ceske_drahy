@@ -49,6 +49,22 @@ public static class RailProject
         if(report.summary.result!=UnityEditor.Build.Reporting.BuildResult.Succeeded)throw new System.Exception("Build failed: "+report.summary.result);
         Debug.Log("RAILWAY_BUILD_OK "+report.summary.totalSize);
     }
+    [MenuItem("České dráhy/Build Windows")]
+    public static void BuildWindows()
+    {
+        EnsureMaterials();ConfigurePlayer();
+        // IL2CPP cannot cross-compile Windows players from macOS; Mono runs everywhere.
+        PlayerSettings.SetScriptingBackend(UnityEditor.Build.NamedBuildTarget.Standalone,ScriptingImplementation.Mono2x);
+        const string folder="Builds/Windows/CeskeDrahy";
+        if(System.IO.Directory.Exists(folder))System.IO.Directory.Delete(folder,true);
+        var report=BuildPipeline.BuildPlayer(new BuildPlayerOptions{scenes=new[]{"Assets/Scenes/OlomoucHlavniNadrazi.unity"},locationPathName=folder+"/CeskeDrahy.exe",target=BuildTarget.StandaloneWindows64,options=BuildOptions.None});
+        if(report.summary.result!=UnityEditor.Build.Reporting.BuildResult.Succeeded)throw new System.Exception("Build failed: "+report.summary.result);
+        foreach(string junk in System.IO.Directory.GetDirectories(folder,"*DontShip*"))System.IO.Directory.Delete(junk,true);
+        const string zip="Builds/CeskeDrahy-Windows.zip";
+        if(System.IO.File.Exists(zip))System.IO.File.Delete(zip);
+        System.IO.Compression.ZipFile.CreateFromDirectory(folder,zip,System.IO.Compression.CompressionLevel.Optimal,true);
+        Debug.Log("RAILWAY_WINDOWS_BUILD_OK "+report.summary.totalSize+" warnings="+report.summary.totalWarnings);
+    }
     public static void EnsureMaterials()
     {
         // Serialized template materials keep the runtime shaders and their instancing variants in player builds.

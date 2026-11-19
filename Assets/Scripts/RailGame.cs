@@ -10,8 +10,8 @@ namespace CeskeDrahy
         /// <summary>Motor constants, shared with the level reachability tests.</summary>
         public const float RunSpeed = 7.8f, JumpSpeed = 13.6f, AirJumpSpeed = 12.3f, Gravity = 28;
         public Mode mode = Mode.Menu;
-        public RailWorld world;
-        public RailChaos chaos;
+        [NonSerialized] public RailWorld world;
+        [NonSerialized] public RailChaos chaos;
         public RailAudio audioMix;
         public float hitShoutVolume;
         public Vector2 position = new Vector2(2,.12f), velocity;

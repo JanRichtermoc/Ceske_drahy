@@ -45,8 +45,8 @@ Sbírej jízdenky a skákej protivníkům na hlavu. Rychlý sled akcí zvyšuje 
 ## Spuštění
 
 ### Windows (hotový build)
-1. Rozbal `CeskeDrahy-Windows.zip` (vydání na GitHubu nebo `Builds/CeskeDrahy-Windows.zip` po sestavení).
-2. Spusť `CeskeDrahy.exe`. Složka `CeskeDrahy_Data`, `UnityPlayer.dll` a `MonoBleedingEdge` musí zůstat vedle exe.
+1. Rozbal `CeskeDrahy-Windows.zip`. Vzniká v `Builds/` po sestavení (viz níže), do Gitu se binárky neukládají.
+2. Ve složce `CeskeDrahy` spusť `CeskeDrahy.exe`. Složka `CeskeDrahy_Data`, `UnityPlayer.dll` a `MonoBleedingEdge` musí zůstat vedle exe.
 3. Při prvním spuštění může Windows SmartScreen zobrazit varování „Systém Windows ochránil váš počítač“, protože build není podepsaný. Klikni na **Další informace → Přesto spustit**.
 
 Požadavky: Windows 10/11 x64, grafika s DirectX 11. Okno lze měnit, celá obrazovka jde zapnout v Nastavení nebo přes Alt+Enter.
@@ -57,7 +57,7 @@ Požadavky: Windows 10/11 x64, grafika s DirectX 11. Okno lze měnit, celá obra
 ### Z Unity editoru
 1. V Unity Hub přidej tuto složku a otevři ji v Unity **6000.6.8f1**.
 2. Otevři `Assets/Scenes/OlomoucHlavniNadrazi.unity` a stiskni **Play**.
-3. Sestavení: menu **České dráhy → Build Windows** (výstup `Builds/Windows/CeskeDrahy.exe` a `Builds/CeskeDrahy-Windows.zip`) nebo **České dráhy → Build macOS**. Pro Windows build je potřeba modul *Windows Build Support (Mono)*.
+3. Sestavení: menu **České dráhy → Build Windows** (výstup `Builds/Windows/CeskeDrahy/CeskeDrahy.exe` a `Builds/CeskeDrahy-Windows.zip`) nebo **České dráhy → Build macOS**. Pro Windows build je potřeba modul *Windows Build Support (Mono)*.
 
 ## Testy
 
