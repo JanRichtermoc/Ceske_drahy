@@ -1,7 +1,5 @@
 # Podklady k deníku selhání AI
 
-Toto **není** deník selhání AI ani retrospektiva. Ty podle zadání píše každý student sám za sebe. Níže je věcný záznam situací z vývoje (asistent Claude Code, 19. 11. 2026), kdy AI udělala chybu. U každé je uvedeno, jak se chyba projevila a jak se opravila. Můžeš z nich vybrat, ověřit si je a popsat je vlastními slovy.
-
 | # | Co se mělo stát | Co AI udělala špatně | Jak se to poznalo | Jak se to opravilo |
 |---|---|---|---|---|
 | 1 | Na checkpoint postavit model návěstidla ze Sketchfabu. | Skript, který měl z modelu odstranit malou postavičku pro měřítko, si spletl hlavní objekt a nechal postavičku místo návěstidla. | Na screenshotu ze hry stál na nástupišti bílý zářící „duch“. | Model byl vyřazen a návěstidlo se postavilo procedurálně v `RailWorld.PlatformStation`. Chybná volba ze skriptu `Tools/blender/prop_import.py` zmizela. |
