@@ -77,6 +77,7 @@ public static class RailSmokeTests
             passed.Add("campaign advancement");
 
             Field("axis").SetValue(g,0f);
+            g.StartLevel(Array.FindIndex(RailLevel.All,l=>l.Id=="olomouc-hodolany"));
             g.position=new Vector2(42,3.5f);
             g.simTime=3.9f;
             Tick(g,1);

@@ -24,6 +24,13 @@ namespace CeskeDrahy
         public RailLevel Level { get; private set; }
         public int LevelIndex { get; private set; }
         readonly List<Mesh> generatedMeshes = new List<Mesh>();
+        readonly List<Texture2D> generatedTextures = new List<Texture2D>();
+        readonly List<Transform> windProps = new List<Transform>();
+        readonly List<Transform> windStreaks = new List<Transform>();
+        Material ballast;
+        Mesh pyramid;
+        /// <summary>World extent along the track, from the start buffer to past the finish gate.</summary>
+        public float Length => Level.Finish+30;
         readonly List<SteamVent> vents = new List<SteamVent>();
         Material skybox;
         sealed class SteamVent
@@ -39,6 +46,7 @@ namespace CeskeDrahy
             Object.Destroy(root.gameObject);
             foreach(var material in mats.Values)Object.Destroy(material);
             foreach(var mesh in generatedMeshes)Object.Destroy(mesh);
+            foreach(var texture in generatedTextures)Object.Destroy(texture);
             Object.Destroy(skybox);
         }
         public void AttachMesh(string name,Transform parent,Mesh mesh,Material material)
@@ -59,7 +67,7 @@ namespace CeskeDrahy
             return material;
         }
         public Platform PlatformAt(float x)=>platforms.Find(v=>x>=v.x-v.width*.5f && x<=v.x+v.width*.5f);
-        Material SoftSprite(string name,Color tint,bool cloud)
+        public Material SoftSprite(string name,Color tint,bool cloud)
         {
             if(mats.TryGetValue(name,out var existing))return existing;
             var material=new Material(Resources.Load<Shader>("SoftSprite")){name=name,color=tint};
@@ -120,11 +128,12 @@ namespace CeskeDrahy
             mesh.vertices=vertices;mesh.uv=uv;mesh.triangles=indices.ToArray();mesh.RecalculateNormals();mesh.RecalculateBounds();
             t.gameObject.AddComponent<MeshFilter>().sharedMesh=mesh;t.gameObject.AddComponent<MeshRenderer>().sharedMaterial=material;generatedMeshes.Add(mesh);return t;
         }
-        public void Sign(string text, Vector3 pos, float size, Transform parent = null, Color? color = null)
+        public Transform Sign(string text, Vector3 pos, float size, Transform parent = null, Color? color = null)
         {
             var t = Group(text, pos, parent); var m = t.gameObject.AddComponent<TextMesh>();
             m.text = text; m.fontSize = 64; m.characterSize = size; m.anchor = TextAnchor.MiddleCenter;
             m.color = color ?? new Color(.91f,.94f,.9f); m.fontStyle = FontStyle.Bold;
+            return t;
         }
         public void Build(int levelIndex = 0)
         {
@@ -135,17 +144,24 @@ namespace CeskeDrahy
             dark=Mat("Rubber and sleepers","#263137"); gold=Mat("Safety amber","#F4B651",.3f,.55f);
             skin=Mat("Warm skin","#A56D49"); rust=Mat("Terracotta","#9C6150"); glass=Mat("Smoky windows","#173F53",.5f,.8f);
             green=Mat("Leaves","#4E715C");
-            var ballast=Mat("Sketchfab railway scan","#C2B9A3");
+            ballast=Mat("Sketchfab railway scan","#C2B9A3");
             ballast.mainTexture=Resources.Load<Texture2D>("Textures/RailBallast"); ballast.mainTextureScale=new Vector2(40,2);
             ballast.SetTexture("_BumpMap",Resources.Load<Texture2D>("Textures/RailBallastNormal"));ballast.SetFloat("_BumpScale",.35f);ballast.EnableKeyword("_NORMALMAP");
-            Box("Ballast bed",new Vector3(92,-1.2f,3),new Vector3(220,.4f,14),ballast);
-            Box("Foreground ground",new Vector3(92,-1.65f,0),new Vector3(220,.5f,45),Textured("Rail forecourt paving","CrackedConcrete",new Vector2(45,9),.24f));
+            var paving=Textured("Rail forecourt paving","CrackedConcrete",new Vector2(45,9),.24f);
+            // A river cuts the ground; everything else runs the full route length.
+            var spans=Level.River==Vector2.zero?new[]{new Vector2(-18,Length)}:new[]{new Vector2(-18,Level.River.x),new Vector2(Level.River.y,Length)};
+            foreach(var span in spans)
+            {
+                float center=(span.x+span.y)*.5f,size=span.y-span.x;
+                Box("Ballast bed",new Vector3(center,-1.2f,3),new Vector3(size,.4f,14),ballast);
+                Box("Foreground ground",new Vector3(center,-1.65f,0),new Vector3(size,.5f,45),paving);
+            }
             // Parallel tracks, with shared meshes and materials.
             for(int track=0;track<3;track++)
             {
                 float z=track*4;
-                for(int side=-1;side<=1;side+=2) Box("Rail",new Vector3(92,-.77f,z+side*.8f),new Vector3(220,.13f,.09f),steel);
-                for(int i=-8;i<202;i+=2) Box("Sleeper",new Vector3(i,-.91f,z),new Vector3(.25f,.16f,2.4f),dark);
+                for(int side=-1;side<=1;side+=2) Box("Rail",new Vector3((Length-18)*.5f,-.77f,z+side*.8f),new Vector3(Length+18,.13f,.09f),steel);
+                for(int i=-8;i<Length;i+=2) Box("Sleeper",new Vector3(i,-.91f,z),new Vector3(.25f,.16f,2.4f),dark);
             }
             int station=0;
             for(int i=0;i<Level.Platforms.Length;i++)
@@ -155,6 +171,7 @@ namespace CeskeDrahy
                 {
                     case 'S':PlatformStation(p.x,p.y,p.z,station==0?Level.Name:station==Level.Stations.Length-1?Level.Zones[station]:station.ToString("00")+" / "+Level.Zones[station]);station++;break;
                     case 'C':Cargo(p.x,p.y,p.z,p.w,i);break;
+                    case 'H':Tank(p.x,p.y,p.z,p.w,i);break;
                     default:Train(p.x,p.y,p.z,(i-1)%4==0?0:(i-1)%4==1?1:2,p.w);break;
                 }
             }
@@ -186,11 +203,7 @@ namespace CeskeDrahy
                 var warn=Box("Attack warning",new Vector3(0,2.3f,0),Vector3.one*.2f,gold,man,PrimitiveType.Sphere);
                 inspectors.Add(man);signals.Add(warn);
             }
-            switch(Level.Theme)
-            {
-                case Theme.MainStation:Background();OlomoucStation.Build(this);break;
-                default:IndustrialBackdrop(Level.Sky==Sky.Night);break;
-            }
+            OlomoucBackdrops.Build(this);
             float finish=Level.Finish;
             float finishY=Level.Platforms[Level.Platforms.Length-1].z;
             Box("Finish gate",new Vector3(finish+1,finishY+2.3f,1),new Vector3(.17f,5,.2f),gold);
@@ -198,31 +211,54 @@ namespace CeskeDrahy
             Sign("CÍL",new Vector3(finish+2,finishY+4.3f,.93f),.16f);
             SetupLight(Level.Sky);
         }
+        sealed class Lighting
+        {
+            public Color horizon,zenith,sun,fill,ambientSky,ambientEquator,fog;
+            public float sunStrength,sunPitch,sunIntensity,fillIntensity,fogEnd;
+        }
+        static Lighting Preset(Sky sky)
+        {
+            switch(sky)
+            {
+                case Sky.Day:return new Lighting{horizon=new Color(.72f,.83f,.92f),zenith=new Color(.27f,.5f,.8f),sunStrength=1,sunPitch=50,sun=new Color(1,.95f,.86f),sunIntensity=1.25f,
+                    fill=new Color(.6f,.75f,1),fillIntensity=.25f,ambientSky=new Color(.58f,.68f,.8f),ambientEquator=new Color(.52f,.56f,.58f),fog=new Color(.72f,.8f,.88f),fogEnd=120};
+                case Sky.Dusk:return new Lighting{horizon=new Color(.85f,.5f,.38f),zenith=new Color(.2f,.27f,.45f),sunStrength=.8f,sunPitch=18,sun=new Color(1,.62f,.42f),sunIntensity=1,
+                    fill=new Color(.5f,.6f,1),fillIntensity=.35f,ambientSky=new Color(.42f,.44f,.6f),ambientEquator=new Color(.45f,.38f,.4f),fog=new Color(.58f,.5f,.55f),fogEnd=95};
+                case Sky.Sunset:return new Lighting{horizon=new Color(.98f,.52f,.22f),zenith=new Color(.25f,.32f,.55f),sunStrength=1.4f,sunPitch=10,sun=new Color(1,.58f,.3f),sunIntensity=1.15f,
+                    fill=new Color(.45f,.55f,1),fillIntensity=.3f,ambientSky=new Color(.5f,.48f,.58f),ambientEquator=new Color(.6f,.45f,.38f),fog=new Color(.8f,.55f,.42f),fogEnd=100};
+                case Sky.Evening:return new Lighting{horizon=new Color(.36f,.33f,.5f),zenith=new Color(.06f,.09f,.22f),sunStrength=.25f,sunPitch=25,sun=new Color(.85f,.75f,.9f),sunIntensity=.7f,
+                    fill=new Color(1,.6f,.4f),fillIntensity=.45f,ambientSky=new Color(.3f,.33f,.48f),ambientEquator=new Color(.32f,.3f,.38f),fog=new Color(.3f,.3f,.42f),fogEnd=85};
+                case Sky.Night:return new Lighting{horizon=new Color(.13f,.22f,.34f),zenith=new Color(.018f,.045f,.13f),sunStrength=.09f,sunPitch=43,sun=new Color(.65f,.8f,1),sunIntensity=.88f,
+                    fill=new Color(1,.56f,.34f),fillIntensity=.53f,ambientSky=new Color(.28f,.36f,.51f),ambientEquator=new Color(.25f,.3f,.42f),fog=new Color(.23f,.32f,.48f),fogEnd=76};
+                default:return new Lighting{horizon=new Color(.78f,.68f,.51f),zenith=new Color(.24f,.44f,.56f),sunStrength=1,sunPitch=32,sun=new Color(1,.82f,.64f),sunIntensity=1.2f,
+                    fill=new Color(.61f,.79f,1),fillIntensity=.25f,ambientSky=new Color(.53f,.62f,.72f),ambientEquator=new Color(.47f,.51f,.52f),fog=new Color(.66f,.69f,.72f),fogEnd=105};
+            }
+        }
         void SetupLight(Sky sky)
         {
-            bool night=sky==Sky.Night;int level=sky==Sky.Day?1:0;
+            var preset=Preset(sky);
             skybox=new Material(Resources.Load<Shader>("EveningSky"));
-            skybox.SetVector("_Horizon",night?new Vector4(.13f,.22f,.34f,1):level==1?new Vector4(.87f,.45f,.24f,1):new Vector4(.78f,.68f,.51f,1));
-            skybox.SetVector("_Zenith",night?new Vector4(.018f,.045f,.13f,1):new Vector4(.24f,.44f,.56f,1));
-            skybox.SetFloat("_SunStrength",night?.09f:level==1?1.2f:1);
+            skybox.SetVector("_Horizon",preset.horizon);
+            skybox.SetVector("_Zenith",preset.zenith);
+            skybox.SetFloat("_SunStrength",preset.sunStrength);
             RenderSettings.skybox=skybox;
             var sun=Group("Main light",Vector3.zero).gameObject.AddComponent<Light>();
             sun.type=LightType.Directional;
-            sun.transform.rotation=Quaternion.Euler(night?43:32,-35,0);
-            sun.color=night?new Color(.65f,.8f,1):new Color(1,.82f,.64f);
-            sun.intensity=night?.88f:1.2f;
+            sun.transform.rotation=Quaternion.Euler(preset.sunPitch,-35,0);
+            sun.color=preset.sun;
+            sun.intensity=preset.sunIntensity;
             sun.shadows=LightShadows.Soft;sun.shadowStrength=.72f;
             var fill=Group("Roof rim light",Vector3.zero).gameObject.AddComponent<Light>();
             fill.type=LightType.Directional;fill.shadows=LightShadows.None;
             fill.transform.rotation=Quaternion.Euler(26,145,0);
-            fill.color=night?new Color(1,.56f,.34f):new Color(.61f,.79f,1);
-            fill.intensity=night?.53f:.25f;
+            fill.color=preset.fill;
+            fill.intensity=preset.fillIntensity;
             RenderSettings.ambientMode=AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor=night?new Color(.28f,.36f,.51f):new Color(.53f,.62f,.72f);
-            RenderSettings.ambientEquatorColor=night?new Color(.25f,.3f,.42f):new Color(.47f,.51f,.52f);
+            RenderSettings.ambientSkyColor=preset.ambientSky;
+            RenderSettings.ambientEquatorColor=preset.ambientEquator;
             RenderSettings.ambientGroundColor=new Color(.25f,.28f,.3f);
-            RenderSettings.fog=true;RenderSettings.fogColor=night?new Color(.23f,.32f,.48f):new Color(.66f,.69f,.72f);RenderSettings.fogMode=FogMode.Linear;
-            RenderSettings.fogStartDistance=28;RenderSettings.fogEndDistance=night?76:105;
+            RenderSettings.fog=true;RenderSettings.fogColor=preset.fog;RenderSettings.fogMode=FogMode.Linear;
+            RenderSettings.fogStartDistance=28;RenderSettings.fogEndDistance=preset.fogEnd;
             QualitySettings.shadowDistance=40;QualitySettings.shadowResolution=ShadowResolution.Medium;
         }
         void Cargo(float x,float width,float top,float travel,int index)
@@ -241,14 +277,54 @@ namespace CeskeDrahy
                 var wheel=Box("Bogie wheel",new Vector3(side*width*.3f,top-2.42f,-.94f),new Vector3(.64f,.12f,.64f),dark,wagon,PrimitiveType.Cylinder);
                 wheel.localRotation=Quaternion.Euler(90,0,0);
             }
-            if(top>3.25f)
-            {
-                float baseY=top-2.86f;
-                Box("Raised track bed",new Vector3(x,baseY,0),new Vector3(width+travel*2,.21f,2.8f),steel);
-                for(int side=-1;side<=1;side+=2)
-                    Box("Raised track pillar",new Vector3(x+side*width*.3f,baseY*.5f-.3f,0),new Vector3(.62f,baseY+.6f,1.7f),Mat("Track pier","#657480"));
-            }
+            RaisedTrack(x,width,travel,top-2.74f);
             platforms.Add(new Platform{x=x,width=width,top=top,root=wagon,amplitude=travel,phase=x});
+        }
+        void Tank(float x,float width,float top,float travel,int index)
+        {
+            var wagon=Group("Cisterna",new Vector3(x,0,0));
+            var paint=Mat("Tank paint "+index%2,index%2==0?"#2C3136":"#BDB7A6",.45f,.55f);
+            float length=width-1;
+            var shell=Box("Tank shell",new Vector3(0,top-1.2f,0),new Vector3(2.1f,length*.5f,2.1f),paint,wagon,PrimitiveType.Cylinder);
+            shell.localRotation=Quaternion.Euler(0,0,90);
+            for(int side=-1;side<=1;side+=2)Box("Tank end",new Vector3(side*length*.5f,top-1.2f,0),new Vector3(.7f,2.1f,2.1f),paint,wagon,PrimitiveType.Sphere);
+            Box("Dome",new Vector3(0,top-.2f,0),new Vector3(.9f,.25f,.9f),paint,wagon,PrimitiveType.Cylinder);
+            Box("Walkway grating",new Vector3(0,top-.06f,0),new Vector3(width-.3f,.12f,1.05f),dark,wagon);
+            for(int side=-1;side<=1;side+=2)Box("Handrail",new Vector3(0,top+.5f,side*.55f),new Vector3(width-.6f,.05f,.05f),gold,wagon);
+            for(float i=-width*.5f+.6f;i<width*.5f;i+=1.6f)Box("Handrail post",new Vector3(i,top+.25f,.55f),new Vector3(.05f,.5f,.05f),gold,wagon);
+            Box("Hazard plate",new Vector3(length*.25f,top-1.25f,-1.07f),new Vector3(.75f,.5f,.03f),gold,wagon);
+            Sign("ČD CARGO  /  Zacns",new Vector3(-length*.15f,top-1.25f,-1.08f),.035f,wagon);
+            Box("Frame",new Vector3(0,top-2.13f,0),new Vector3(width,.28f,2.15f),dark,wagon);
+            for(int side=-1;side<=1;side+=2)
+            {
+                var wheel=Box("Bogie wheel",new Vector3(side*width*.3f,top-2.42f,-.94f),new Vector3(.64f,.12f,.64f),dark,wagon,PrimitiveType.Cylinder);
+                wheel.localRotation=Quaternion.Euler(90,0,0);
+            }
+            RaisedTrack(x,width,travel,top-2.74f);
+            platforms.Add(new Platform{x=x,width=width,top=top,root=wagon,amplitude=travel,phase=x});
+        }
+        /// <summary>Wagons higher than the ground tracks stand on an embankment or a steel viaduct, never in the air.</summary>
+        void RaisedTrack(float x,float width,float travel,float wheelBottom)
+        {
+            if(wheelBottom<-.5f)return;
+            float length=width+travel*2+1.4f,railTop=wheelBottom;
+            var g=Group("Raised track",new Vector3(x,0,0));
+            if(railTop<1.6f)
+            {
+                float height=railTop-.2f+1.05f;
+                Box("Embankment",new Vector3(0,-1.05f+height*.5f,0),new Vector3(length,height,3.2f),ballast,g);
+                Box("Embankment shoulder",new Vector3(0,-1.05f+height*.35f,0),new Vector3(length+1.2f,height*.7f,3.9f),ballast,g);
+            }
+            else
+            {
+                var pier=Mat("Track pier","#657480");
+                Box("Viaduct deck",new Vector3(0,railTop-.32f,0),new Vector3(length,.24f,2.8f),pier,g);
+                for(int side=-1;side<=1;side+=2)Box("Plate girder",new Vector3(0,railTop-.62f,side*1.25f),new Vector3(length,.5f,.16f),steel,g);
+                for(int side=-1;side<=1;side+=2)
+                    Box("Viaduct pillar",new Vector3(side*length*.3f,(railTop-1.85f)*.5f,0),new Vector3(.7f,railTop-.8f+1.05f,1.9f),pier,g);
+            }
+            for(float i=-length*.5f+.3f;i<length*.5f;i+=.9f)Box("Sleeper",new Vector3(i,railTop-.16f,0),new Vector3(.25f,.12f,2.4f),dark,g);
+            for(int side=-1;side<=1;side+=2)Box("Rail",new Vector3(0,railTop-.065f,side*.8f),new Vector3(length,.13f,.09f),steel,g);
         }
         void CreateVent(Platform p,int phase)
         {
@@ -266,12 +342,12 @@ namespace CeskeDrahy
             plume.gameObject.SetActive(false);
             vents.Add(new SteamVent{Platform=p,Warning=warning,Plume=plume,Phase=phase*.68f});
         }
-        void IndustrialBackdrop(bool night)
+        public void IndustrialBackdrop(bool night)
         {
             var brick=Textured("Depot scanned masonry","StationBrick",new Vector2(6,2.1f),.65f);
             var warm=Mat("Floodlit window","#FFBB66");
             var glow=SoftSprite("Floodlight glow",new Color(1,.59f,.25f,night?.40f:.17f),false);
-            for(int x=10;x<185;x+=32)
+            for(int x=10;x<Length-10;x+=32)
             {
                 float h=night?9:11;
                 Box("Maintenance hall",new Vector3(x,h/2-1,15),new Vector3(26,h,6),brick);
@@ -304,9 +380,11 @@ namespace CeskeDrahy
             var g=Group("Vagon "+variant,new Vector3(x,0,0));
             if(variant!=1 && ImportedTrain(g,width,top))
             {
+                RaisedTrack(x,width,moving,top-3.1f);
                 platforms.Add(new Platform{x=x,width=width,top=top,root=g,amplitude=moving,phase=x});
                 return;
             }
+            RaisedTrack(x,width,moving,top-2.52f);
             Material body=variant==2?rust:blue;
             Box("Body",new Vector3(0,top-1.02f,0),new Vector3(width,1.8f,2.15f),body,g);
             Box("Roof base",new Vector3(0,top-.24f,0),new Vector3(width+.15f,.1f,2.25f),steel,g);
@@ -381,10 +459,10 @@ namespace CeskeDrahy
             }
             return p;
         }
-        void Background()
+        public void Background()
         {
             var rng=new System.Random(42);
-            for(int i=-20;i<205;i+=9)
+            for(int i=-20;i<Length;i+=9)
             {
                 if(i>-18 && i<44)continue;
                 float h=4+(float)rng.NextDouble()*6;
@@ -402,22 +480,87 @@ namespace CeskeDrahy
                     Box("Window sill",new Vector3(i+col,row,13.8f),new Vector3(1.1f,.1f,.3f),cream);
                 }
             }
-            for(int i=-10;i<190;i+=14)
-            {
-                Box("Catenary mast",new Vector3(i,3.4f,5),new Vector3(.14f,8.5f,.14f),steel);
-                Box("Crossbar",new Vector3(i,7.3f,2),new Vector3(.16f,.12f,6),steel);
-                Box("Wire",new Vector3(i+7,7.1f,0),new Vector3(14,.022f,.022f),dark);
-                Box("Lamp",new Vector3(i,6,3),new Vector3(.7f,.12f,.4f),cream);
-            }
-            for(int i=10;i<180;i+=17)
+            Catenary(-10,Length-15);
+            for(int i=10;i<Length-20;i+=17)
             {
                 if(i<44)continue;
                 Box("Tree trunk",new Vector3(i,1.7f,10),new Vector3(.35f,5,.35f),rust);
                 for(int n=0;n<4;n++)Box("Tree crown",new Vector3(i+Mathf.Sin(n*2)*1.1f,3.4f+n*.45f,10+Mathf.Cos(n*2)*.65f),new Vector3(2.6f,3.2f,2.5f),green,null,PrimitiveType.Sphere);
             }
             // Backdrop trains create depth without adding gameplay collisions.
-            for(int i=12;i<170;i+=28)
+            for(int i=12;i<Length-30;i+=28)
             {Box("Parked train",new Vector3(i,1.2f,8),new Vector3(20,2.4f,2.3f),navy);Box("Parked stripe",new Vector3(i,1.7f,6.8f),new Vector3(20,.65f,.05f),cream);}
+        }
+        public void Catenary(float from,float to)
+        {
+            for(float i=from;i<to;i+=14)
+            {
+                Box("Catenary mast",new Vector3(i,3.4f,5),new Vector3(.14f,8.5f,.14f),steel);
+                Box("Crossbar",new Vector3(i,7.3f,2),new Vector3(.16f,.12f,6),steel);
+                Box("Wire",new Vector3(i+7,7.1f,0),new Vector3(14,.022f,.022f),dark);
+                Box("Lamp",new Vector3(i,6,3),new Vector3(.7f,.12f,.4f),cream);
+            }
+        }
+        public Transform Cylinder(string name,Vector3 pos,float diameter,float height,Material material,Transform parent=null)=>
+            Box(name,pos,new Vector3(diameter,height*.5f,diameter),material,parent,PrimitiveType.Cylinder);
+        /// <summary>Four-sided spire with its base at pos. One shared mesh per world.</summary>
+        public Transform Spire(string name,Vector3 pos,float width,float height,Material material,Transform parent=null)
+        {
+            if(!pyramid)
+            {
+                pyramid=new Mesh{name="Spire"};
+                var v=new[]{new Vector3(-.5f,0,-.5f),new Vector3(.5f,0,-.5f),new Vector3(.5f,0,.5f),new Vector3(-.5f,0,.5f),new Vector3(0,1,0)};
+                var verts=new List<Vector3>();var tris=new List<int>();
+                int[][] faces={new[]{0,4,1},new[]{1,4,2},new[]{2,4,3},new[]{3,4,0},new[]{0,1,2},new[]{0,2,3}};
+                foreach(var f in faces){foreach(int k in f){tris.Add(verts.Count);verts.Add(v[k]);}}
+                pyramid.SetVertices(verts);pyramid.SetTriangles(tris,0);pyramid.RecalculateNormals();pyramid.RecalculateBounds();
+                generatedMeshes.Add(pyramid);
+            }
+            var t=Group(name,pos,parent);t.localScale=new Vector3(width,height,width);
+            t.gameObject.AddComponent<MeshFilter>().sharedMesh=pyramid;t.gameObject.AddComponent<MeshRenderer>().sharedMaterial=material;
+            return t;
+        }
+        /// <summary>Runtime facade texture: a grid of windows, some of them lit. Tiles once per facade.</summary>
+        public Material Facade(string name,Color wall,Color window,Color lit,int columns,int rows,float litRatio,int seed)
+        {
+            if(mats.TryGetValue(name,out var existing))return existing;
+            const int cell=32;
+            var texture=new Texture2D(columns*cell,rows*cell,TextureFormat.RGBA32,true){name=name,wrapMode=TextureWrapMode.Repeat,anisoLevel=4};
+            var rng=new System.Random(seed);var pixels=new Color32[texture.width*texture.height];
+            for(int row=0;row<rows;row++)for(int col=0;col<columns;col++)
+            {
+                Color glass=rng.NextDouble()<litRatio?lit:window*(.8f+(float)rng.NextDouble()*.4f);
+                for(int y=0;y<cell;y++)for(int x=0;x<cell;x++)
+                {
+                    bool inWindow=x>5&&x<cell-5&&y>7&&y<cell-5;
+                    bool sill=y>=4&&y<=7&&x>3&&x<cell-3;
+                    Color c=inWindow?glass:sill?wall*.82f:wall*(.96f+((x*7+y*13)%5)*.01f);
+                    if(inWindow&&(x==cell/2))c=wall*.9f;
+                    pixels[(row*cell+y)*texture.width+col*cell+x]=c;
+                }
+            }
+            texture.SetPixels32(pixels);texture.Apply(true,true);generatedTextures.Add(texture);
+            var material=Mat(name,"#FFFFFF",smooth:.18f);material.mainTexture=texture;
+            return material;
+        }
+        public void AddWindProp(Transform prop)=>windProps.Add(prop);
+        public void AddWindStreak(Transform streak)=>windStreaks.Add(streak);
+        /// <summary>Flags lean and streaks blow while the gust pushes; purely visual.</summary>
+        public void Weather(float wind,bool warning,float time,float focusX)
+        {
+            float strength=Mathf.Clamp01(-wind/3);
+            for(int i=0;i<windProps.Count;i++)
+                windProps[i].localRotation=Quaternion.Euler(0,0,Mathf.Lerp(78,8,strength)+Mathf.Sin(time*(6+strength*10)+i)*(4+strength*9));
+            for(int i=0;i<windStreaks.Count;i++)
+            {
+                var streak=windStreaks[i];
+                bool on=strength>.05f;
+                if(streak.gameObject.activeSelf!=on)streak.gameObject.SetActive(on);
+                if(!on)continue;
+                float span=34,phase=Mathf.Repeat(time*22+i*7.3f,span);
+                var p=streak.position;streak.position=new Vector3(focusX+span*.5f-phase,p.y,p.z);
+                streak.localScale=new Vector3(2.4f+strength*3,.05f,1);
+            }
         }
         /// <summary>Places moving wagons between the last two fixed steps for smooth high-refresh rendering.</summary>
         public void Interpolate(float alpha)

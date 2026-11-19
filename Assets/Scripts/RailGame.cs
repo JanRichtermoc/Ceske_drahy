@@ -160,6 +160,7 @@ namespace CeskeDrahy
                 accumulator+=dt;
                 while(mode==Mode.Playing && accumulator>=FixedStep){Step(FixedStep);accumulator-=FixedStep;}
                 world.Interpolate(Mathf.Clamp01(accumulator/FixedStep));
+                world.Weather(wind,windWarning,simTime,position.x);
                 AnimateHero(dt);
             }
             else if(mode==Mode.Menu)
