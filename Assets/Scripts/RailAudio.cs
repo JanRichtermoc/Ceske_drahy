@@ -25,7 +25,7 @@ namespace CeskeDrahy
         AudioClip step1, step2, land, ticket, spring, wings, whoosh, impact, whistle;
         readonly AudioClip[] screamClips = new AudioClip[3];
         readonly AudioClip[] voiceClips = new AudioClip[8];
-        float stepClock, wingClock, duck, voiceCooldown;
+        float stepClock, wingClock, duck, voiceCooldown, landQuiet;
         bool wasGrounded;
         int nextStep, nextScream, nextBark;
         public float ImpactPulse { get; private set; }
@@ -81,7 +81,11 @@ namespace CeskeDrahy
             duck = 0;
             wasGrounded = false;
             ImpactPulse = 0;
+            Quiet();
         }
+
+        /// <summary>Suppresses the landing thud after a spawn or respawn.</summary>
+        public void Quiet() => landQuiet = .25f;
 
         public void Jump() => Play(effects, step2, .13f);
         public void Ticket() => Play(effects, ticket, .21f);
@@ -109,10 +113,11 @@ namespace CeskeDrahy
             return Barks[i];
         }
 
-        public void Announce(int line)
+        public bool Announce(int line)
         {
-            if (voiceCooldown > 0) return;
+            if (voiceCooldown > 0) return false;
             Speak(Barks.Length + line, 0, .37f);
+            return true;
         }
 
         void Speak(int clipIndex, float pan, float volume)
@@ -122,6 +127,8 @@ namespace CeskeDrahy
             Play(dialogue, clip, volume);
             voiceCooldown = clip ? clip.length + .32f : 2.2f;
         }
+
+        void OnDisable() => AudioListener.pause = false;
 
         void Update()
         {
@@ -135,11 +142,12 @@ namespace CeskeDrahy
             ambience.volume = background * (playing ? .16f : .095f);
             rails.volume = background * (playing ? .105f : .035f);
             dialogue.volume = duck > 0 ? .3f : 1;
-            bool silence = game.muted || game.mode == RailGame.Mode.Paused;
-            effects.mute = screams.mute = dialogue.mute = silence;
+            AudioListener.pause = game.mode == RailGame.Mode.Paused;
+            effects.mute = screams.mute = dialogue.mute = game.muted;
             if (!playing) return;
 
-            if (game.grounded && !wasGrounded)
+            landQuiet -= dt;
+            if (game.grounded && !wasGrounded && landQuiet <= 0)
                 Play(effects, land, .14f);
             wasGrounded = game.grounded;
 

@@ -7,7 +7,8 @@ namespace CeskeDrahy
         public RailGame game;
         GUIStyle title,display,body,small,number,button,eyebrow,popup;
         readonly Color ink=new Color(.045f,.095f,.13f,.96f), muted=new Color(.67f,.77f,.8f), paper=new Color(.95f,.95f,.89f), amber=new Color(1,.72f,.31f);
-        bool settings;
+        bool settings, volumeDirty;
+        int seenMode=-1;
         float fps;
         void Init()
         {
@@ -32,8 +33,14 @@ namespace CeskeDrahy
         void OnGUI()
         {
             Init();float scale=Mathf.Min(Screen.width/1600f,Screen.height/900f);
+            // Transient panels never survive a mode change (pause, finish, menu).
+            if(seenMode!=game.ModeVersion){seenMode=game.ModeVersion;settings=false;}
+            if(settings && Event.current.type==EventType.KeyDown && Event.current.keyCode==KeyCode.Escape){settings=false;Event.current.Use();}
+            game.uiModal=settings;
+            GUI.enabled=!settings;
             GUI.matrix=Matrix4x4.TRS(new Vector3((Screen.width-1600*scale)/2,(Screen.height-900*scale)/2,0),Quaternion.identity,Vector3.one*scale);
             if(game.mode==RailGame.Mode.Menu){MainMenu();return;}
+            if(game.mode==RailGame.Mode.Loading){Loading();return;}
             if(game.mode==RailGame.Mode.Playing)
             {
                 if(!game.reducedMotion && game.audioMix.ImpactPulse>0)
@@ -56,20 +63,26 @@ namespace CeskeDrahy
             Label(48,183,610,220,"ČESKÉ\nDRÁHY",title);
             Rect(54,409,72,5,amber);Label(54,441,555,40,"OLOMOUCKÝ CHAOS",number);
             Label(54,501,530,94,"CJ má jízdenku. Nádraží má jiné plány. Přeskoč střechy vagonů a dostaň se přes celé seřadiště.",body);
-            if(Button(54,626,540,"HRÁT OD ZAČÁTKU                      →")){settings=false;game.StartLevel(0);}
+            if(Button(54,626,540,"HRÁT OD ZAČÁTKU                      →")){settings=false;game.StartLevel(0,true);}
             if(Button(54,698,260,"NASTAVENÍ",false))settings=!settings;
-            Label(338,716,270,30,"ENTER  /  rychlý start",small);
+            if(Button(334,698,260,"KONEC HRY",false))game.Quit();
             Rect(1020,543,522,272,ink);
             Label(1048,562,460,30,"VÝBĚR TRATI",eyebrow);
             for(int i=0;i<RailLevel.All.Length;i++)
             {
-                string difficulty=i==0?"START":i==1?"TĚŽKÁ":"EXPERT";
+                string difficulty=new string('●',RailLevel.All[i].Difficulty);
                 if(Button(1048,600+i*67,466,RailLevel.All[i].Name+"  /  "+difficulty,false))
-                {settings=false;game.StartLevel(i);}
+                {settings=false;game.StartLevel(i,true);}
             }
             Rect(0,834,1600,66,ink);Label(48,856,1050,35,"A D / ← →  POHYB     MEZERNÍK  DVOJSKOK     SHIFT  ÚHYB     ESC  PAUZA",small);
             Label(1230,856,350,30,"OSOBNÍ FANOUŠKOVSKÁ HRA",small);
-            if(settings)Settings(720,135);
+            if(settings){GUI.enabled=true;Settings(720,135);}
+        }
+        void Loading()
+        {
+            Rect(0,0,1600,900,new Color(.025f,.06f,.09f,.92f));
+            Label(474,380,700,30,"PŘISTAVUJEME SOUPRAVU…",eyebrow);
+            Label(472,420,700,72,RailLevel.All[game.selectedLevel].Name,display);
         }
         void Hud()
         {
@@ -85,7 +98,7 @@ namespace CeskeDrahy
             Label(28,871,1010,25,"A D  POHYB    /    MEZERNÍK  DVOJSKOK    /    SHIFT  ÚHYB    /    R  CHECKPOINT",small);
             Label(1240,871,340,25,"ESC  PAUZA   ·   "+Mathf.RoundToInt(fps)+" FPS",small);
             if(game.noticeTime>0){Rect(460,130,680,54,ink);Label(480,145,640,30,game.notice,eyebrow);}
-            if(game.position.x<9 && game.mode==RailGame.Mode.Playing)
+            if(game.LevelIndex==0 && game.position.x<9 && game.mode==RailGame.Mode.Playing)
             {Rect(50,655,470,130,ink);Label(74,678,430,30,"KUFROVÝ KATAPULT",eyebrow);Label(74,720,420,55,"Šlápni na růžový kufr. Další skok můžeš udělat ve vzduchu.",body);}
         }
         void DrawStatus()
@@ -129,30 +142,29 @@ namespace CeskeDrahy
             Rect(0,0,1600,900,new Color(.025f,.06f,.09f,.72f));Rect(420,190,760,530,ink);
             Label(474,231,660,28,paused?"PAUZA  /  NÁSTUPIŠTĚ JE TVOJE":"KONEC JÍZDY  /  "+game.Zone,eyebrow);
             Label(472,292,670,72,heading,display);Label(474,379,650,60,description,body);
-            Label(474,456,650,45,"BODY  "+game.score+"     KOMBO ×"+game.chaos.bestCombo+"     ČAS  "+game.elapsed.ToString("0.0")+" s",body);
-            Label(474,498,650,30,"REKORD  "+PlayerPrefs.GetInt(game.BestKey,0)+"     ODRAZY  "+game.chaos.stomps,small);
+            Label(474,456,650,45,"BODY  "+game.score+"     KOMBO ×"+game.chaos.bestCombo+"     ČAS  "+game.elapsed.ToString("0.00")+" s",body);
+            Label(474,498,650,30,"REKORD  "+game.bestScore+"     NEJLEPŠÍ ČAS  "+(game.bestTime>0?game.bestTime.ToString("0.00")+" s":"—")+"     ODRAZY  "+game.chaos.stomps,small);
             bool next=game.mode==RailGame.Mode.Won && game.HasNextLevel;
             string action=paused?"POKRAČOVAT":next?"DALŠÍ TRAŤ  /  "+RailLevel.All[game.LevelIndex+1].Name:"ZNOVU NA TRAŤ";
-            if(Button(474,542,652,action+"   →")){if(paused)game.TogglePause();else game.FinishAction();}
+            if(Button(474,542,652,action+"   →")){if(paused)game.TogglePause();else game.FinishAction(true);}
             if(Button(474,614,316,"HLAVNÍ MENU",false)){settings=false;game.Menu();}
             if(Button(810,614,316,"NASTAVENÍ",false))settings=!settings;
-            if(settings)Settings(430,205);
+            if(settings){GUI.enabled=true;Settings(430,205);}
         }
         void Settings(float x,float y)
         {
             Rect(x,y,650,585,ink);Label(x+34,y+30,590,55,"NASTAVENÍ",display);
             if(Button(x+34,y+110,582,"ZVUK: "+(game.muted?"VYPNUTÝ":"ZAPNUTÝ"),false)){game.muted=!game.muted;game.SaveSettings();}
             if(Button(x+34,y+186,582,"GRAFIKA: "+(game.lowQuality?"ÚSPORNÁ":"VYSOKÁ"),false)){game.lowQuality=!game.lowQuality;game.SaveSettings();}
-            if(Button(x+34,y+262,582,"OTŘESY KAMERY: "+(game.reducedMotion?"VYPNUTÉ":"ZAPNUTÉ"),false)){game.reducedMotion=!game.reducedMotion;game.SaveSettings();}
+            if(Button(x+34,y+262,284,"OTŘESY: "+(game.reducedMotion?"VYPNUTÉ":"ZAPNUTÉ"),false)){game.reducedMotion=!game.reducedMotion;game.SaveSettings();}
+            if(Button(x+332,y+262,284,Screen.fullScreen?"OKNO":"CELÁ OBRAZOVKA",false))game.ToggleFullscreen();
             Label(x+34,y+344,580,31,"ŘEV PŘI ZÁSAHU  "+Mathf.RoundToInt(game.hitShoutVolume*100)+" %",body);
             float volume=GUI.HorizontalSlider(new Rect(x+38,y+386,570,25),game.hitShoutVolume,0,1);
-            if(!Mathf.Approximately(volume,game.hitShoutVolume))
-            {
-                game.hitShoutVolume=volume;
-                game.SaveSettings();
-            }
+            if(!Mathf.Approximately(volume,game.hitShoutVolume)){game.hitShoutVolume=volume;volumeDirty=true;}
+            // Persist once per drag instead of on every slider event.
+            if(volumeDirty && Event.current.type==EventType.MouseUp){volumeDirty=false;game.SaveSettings();}
             Label(x+34,y+420,580,32,"Ovlivní jen řev. Náraz a hlášky zůstanou slyšet.",small);
-            if(Button(x+34,y+485,582,"HOTOVO"))settings=false;
+            if(Button(x+34,y+485,582,"HOTOVO")){settings=false;if(volumeDirty){volumeDirty=false;game.SaveSettings();}}
         }
     }
 }

@@ -8,7 +8,7 @@ namespace CeskeDrahy
     {
         public sealed class Platform
         {
-            public float x, width, top, amplitude, phase, offset, delta;
+            public float x, width, top, amplitude, phase, offset, previous, delta;
             public Transform root;
             public float Left => x + offset - width / 2;
             public float Right => x + offset + width / 2;
@@ -147,13 +147,16 @@ namespace CeskeDrahy
                 for(int side=-1;side<=1;side+=2) Box("Rail",new Vector3(92,-.77f,z+side*.8f),new Vector3(220,.13f,.09f),steel);
                 for(int i=-8;i<202;i+=2) Box("Sleeper",new Vector3(i,-.91f,z),new Vector3(.25f,.16f,2.4f),dark);
             }
-            string[] stationNames={Level.Name,levelIndex==0?"01 / PODCHOD":"01 / SERVISNÍ LÁVKA",levelIndex==0?"02 / NÁSTUPIŠTĚ 5":"02 / SIGNÁL VOLNO","CÍL / POSLEDNÍ SPOJ"};
+            int station=0;
             for(int i=0;i<Level.Platforms.Length;i++)
             {
                 Vector4 p=Level.Platforms[i];
-                if(i%4==0)PlatformStation(p.x,p.y,p.z,stationNames[i/4]);
-                else if(levelIndex>0 && (p.z>3.25f || i%3!=1))Cargo(p.x,p.y,p.z,p.w,i);
-                else Train(p.x,p.y,p.z,(i-1)%4==0?0:(i-1)%4==1?1:2,p.w);
+                switch(Level.Kinds[i])
+                {
+                    case 'S':PlatformStation(p.x,p.y,p.z,station==0?Level.Name:station==Level.Stations.Length-1?Level.Zones[station]:station.ToString("00")+" / "+Level.Zones[station]);station++;break;
+                    case 'C':Cargo(p.x,p.y,p.z,p.w,i);break;
+                    default:Train(p.x,p.y,p.z,(i-1)%4==0?0:(i-1)%4==1?1:2,p.w);break;
+                }
             }
             foreach(int index in Level.Vents)CreateVent(platforms[index],index);
             foreach(var p in platforms)
@@ -167,7 +170,7 @@ namespace CeskeDrahy
             }
             foreach(float x in Level.Birds)
             {
-                float height=levelIndex==0?5.2f:Surface(x,3.6f)+1.95f;
+                float height=Level.Theme==Theme.MainStation?5.2f:Surface(x,3.6f)+1.95f;
                 var b=Group("Holub",new Vector3(x,height,0));
                 Box("Body",Vector3.zero,new Vector3(.55f,.3f,.33f),steel,b,PrimitiveType.Sphere);
                 Box("Head",new Vector3(-.3f,.13f,0),Vector3.one*.24f,navy,b,PrimitiveType.Sphere);
@@ -183,18 +186,21 @@ namespace CeskeDrahy
                 var warn=Box("Attack warning",new Vector3(0,2.3f,0),Vector3.one*.2f,gold,man,PrimitiveType.Sphere);
                 inspectors.Add(man);signals.Add(warn);
             }
-            if(levelIndex==0){Background();OlomoucStation.Build(this);}
-            else IndustrialBackdrop(levelIndex==2);
+            switch(Level.Theme)
+            {
+                case Theme.MainStation:Background();OlomoucStation.Build(this);break;
+                default:IndustrialBackdrop(Level.Sky==Sky.Night);break;
+            }
             float finish=Level.Finish;
-            float finishY=Level.Platforms[12].z;
+            float finishY=Level.Platforms[Level.Platforms.Length-1].z;
             Box("Finish gate",new Vector3(finish+1,finishY+2.3f,1),new Vector3(.17f,5,.2f),gold);
             Box("Finish flag",new Vector3(finish+2,finishY+4.3f,1),new Vector3(2,1,.08f),blue);
             Sign("CÍL",new Vector3(finish+2,finishY+4.3f,.93f),.16f);
-            SetupLight(levelIndex);
+            SetupLight(Level.Sky);
         }
-        void SetupLight(int level)
+        void SetupLight(Sky sky)
         {
-            bool night=level==2;
+            bool night=sky==Sky.Night;int level=sky==Sky.Day?1:0;
             skybox=new Material(Resources.Load<Shader>("EveningSky"));
             skybox.SetVector("_Horizon",night?new Vector4(.13f,.22f,.34f,1):level==1?new Vector4(.87f,.45f,.24f,1):new Vector4(.78f,.68f,.51f,1));
             skybox.SetVector("_Zenith",night?new Vector4(.018f,.045f,.13f,1):new Vector4(.24f,.44f,.56f,1));
@@ -336,7 +342,8 @@ namespace CeskeDrahy
             var prefab=Resources.Load<GameObject>("Models/CD810/scene");if(!prefab)return false;
             var wrapper=Group("ČD 810 / voxellation / Sketchfab CC BY",Vector3.zero,parent);
             var instance=Object.Instantiate(prefab,wrapper);instance.transform.localPosition=Vector3.zero;
-            var renderers=instance.GetComponentsInChildren<Renderer>();if(renderers.Length==0)return false;
+            var renderers=instance.GetComponentsInChildren<Renderer>();
+            if(renderers.Length==0){Object.Destroy(wrapper.gameObject);return false;}
             Bounds b=renderers[0].bounds;foreach(var r in renderers)b.Encapsulate(r.bounds);
             Vector3 center=wrapper.InverseTransformPoint(b.center);
             wrapper.localScale=new Vector3(width/b.size.x,3.1f/b.size.y,2.5f/b.size.z);
@@ -412,17 +419,22 @@ namespace CeskeDrahy
             for(int i=12;i<170;i+=28)
             {Box("Parked train",new Vector3(i,1.2f,8),new Vector3(20,2.4f,2.3f),navy);Box("Parked stripe",new Vector3(i,1.7f,6.8f),new Vector3(20,.65f,.05f),cream);}
         }
+        /// <summary>Places moving wagons between the last two fixed steps for smooth high-refresh rendering.</summary>
+        public void Interpolate(float alpha)
+        {
+            foreach(var p in platforms)if(p.amplitude!=0)p.root.position=new Vector3(p.x+Mathf.Lerp(p.previous,p.offset,alpha),0,0);
+        }
         public void Tick(float time,float dt)
         {
             foreach(var vent in vents)
             {
-                float phase=(time+vent.Phase)%(LevelIndex==2?3.55f:4.45f);
+                float phase=(time+vent.Phase)%Level.VentPeriod;
                 vent.Active=phase>=1.15f && phase<2.13f;
                 vent.Warning.gameObject.SetActive(phase<1.15f && Mathf.Sin(time*26)>0);
                 vent.Plume.gameObject.SetActive(vent.Active);
                 if(vent.Active)vent.Plume.localScale=new Vector3(1,.65f+.35f*Mathf.Sin((phase-1.15f)*3.2f),1);
             }
-            foreach(var p in platforms){float v=Mathf.Sin(time*.8f+p.phase)*p.amplitude;p.delta=v-p.offset;p.offset=v;p.root.position=new Vector3(p.x+v,0,0);}
+            foreach(var p in platforms){float v=Mathf.Sin(time*.8f+p.phase)*p.amplitude;p.previous=p.offset;p.delta=v-p.offset;p.offset=v;p.root.position=new Vector3(p.x+v,0,0);}
             for(int i=0;i<tickets.Count;i++)if(tickets[i].gameObject.activeSelf){tickets[i].position=new Vector3(ticketOrigins[i].x,ticketOrigins[i].y+Mathf.Sin(time*3+i)*.12f,0);tickets[i].rotation=Quaternion.Euler(0,time*90,8);}
             for(int i=0;i<birds.Count;i++)
             {

@@ -8,15 +8,12 @@ namespace CeskeDrahy
     {
         public sealed class Pop { public Vector2 at;public string text;public float life;public Color color; }
         public readonly Pop[] pops=new Pop[18];
-        public readonly Transform[] streetEnemies=new Transform[5];
-        public readonly Transform[] medkits=new Transform[4];
-        public readonly Transform[] cheeses=new Transform[3];
-        public readonly Transform[] springs=new Transform[3];
-        readonly Transform[] needles=new Transform[12],warning=new Transform[5],aura=new Transform[5];
+        public readonly Transform[] streetEnemies,medkits,cheeses,springs;
+        readonly Transform[] needles=new Transform[12],warning,aura=new Transform[5];
         readonly Vector2[] needleVelocity=new Vector2[12];
-        readonly float[] needleLife=new float[12],streetTime=new float[5],streetStun=new float[5],inspectorStun=new float[6],birdStun=new float[7],springCooldown=new float[3];
-        readonly bool[] streetThrown=new bool[5],streetCalled=new bool[5];
-        readonly Vector3[] medkitPositions=new Vector3[4],cheesePositions=new Vector3[3];
+        readonly float[] needleLife=new float[12],streetTime,streetStun,inspectorStun,birdStun,springCooldown;
+        readonly bool[] streetThrown,streetCalled;
+        readonly Vector3[] medkitPositions,cheesePositions;
         readonly RailGame game;readonly RailWorld world;
         public float infection,turbo,dash,dashCooldown,comboTime;
         public int combo=1,bestCombo=1,ticketsCollected,stomps;
@@ -27,8 +24,16 @@ namespace CeskeDrahy
         public RailChaos(RailGame owner)
         {
             game=owner;world=owner.world;
+            var level=world.Level;
+            streetEnemies=new Transform[level.Street.Length];warning=new Transform[level.Street.Length];
+            streetTime=new float[level.Street.Length];streetStun=new float[level.Street.Length];
+            streetThrown=new bool[level.Street.Length];streetCalled=new bool[level.Street.Length];
+            medkits=new Transform[level.Medkits.Length];medkitPositions=new Vector3[level.Medkits.Length];
+            cheeses=new Transform[level.Snacks.Length];cheesePositions=new Vector3[level.Snacks.Length];
+            springs=new Transform[level.Springs.Length];springCooldown=new float[level.Springs.Length];
+            inspectorStun=new float[world.inspectors.Count];birdStun=new float[world.birds.Count];
             for(int i=0;i<pops.Length;i++)pops[i]=new Pop();
-            float[] xs=world.Level.Street;
+            float[] xs=level.Street;
             for(int i=0;i<xs.Length;i++)
             {
                 float y=Surface(xs[i]);
@@ -100,11 +105,13 @@ namespace CeskeDrahy
             for(int i=0;i<springs.Length;i++)springCooldown[i]=0;
             ClearTransient();
         }
-        public void ClearTransient()
+        public void ClearTransient(bool keepInfection=false)
         {
-            infection=turbo=dash=infectionProtection=0;airJumpReady=true;
+            if(!keepInfection)infection=0;
+            turbo=dash=infectionProtection=0;airJumpReady=true;
             for(int i=0;i<needles.Length;i++){needleLife[i]=0;needles[i].gameObject.SetActive(false);}
             foreach(var t in aura)t.gameObject.SetActive(false);
+            if(!keepInfection)foreach(var p in pops)p.life=0;
         }
         public void PopText(string text,Vector2 position,Color? color=null,float duration=1.15f)
         {
@@ -145,18 +152,19 @@ namespace CeskeDrahy
             if(comboTime<=0)combo=1;
             if(game.grounded)airJumpReady=true;
             foreach(var p in pops)if(p.life>0){p.life-=dt;p.at.y+=dt*.9f;}
-            for(int i=0;i<birdStun.Length;i++)if(birdStun[i]>0){birdStun[i]-=dt;if(birdStun[i]<=0 && i<world.birds.Count)world.birds[i].gameObject.SetActive(true);}
-            for(int i=0;i<inspectorStun.Length;i++)if(inspectorStun[i]>0){inspectorStun[i]-=dt;if(inspectorStun[i]<=0&&i<world.inspectors.Count)world.inspectors[i].rotation=Quaternion.identity;}
+            for(int i=0;i<birdStun.Length;i++)if(birdStun[i]>0){birdStun[i]-=dt;if(birdStun[i]<=0)world.birds[i].gameObject.SetActive(true);}
+            for(int i=0;i<inspectorStun.Length;i++)if(inspectorStun[i]>0){inspectorStun[i]-=dt;if(inspectorStun[i]<=0)world.inspectors[i].rotation=Quaternion.identity;}
             announcementTimer-=dt;
             if(announcementTimer<=0)
             {
-                if(game.noticeTime<=0)
+                int line=announcementIndex%RailAudio.Announcements.Length;
+                if(game.noticeTime<=0 && game.audioMix.Announce(line))
                 {
-                    int line=announcementIndex++%RailAudio.Announcements.Length;
+                    announcementIndex++;
                     game.Notice("HLÁŠENÍ: "+RailAudio.Announcements[line]);
-                    game.audioMix.Announce(line);
+                    announcementTimer=14;
                 }
-                announcementTimer=14;
+                else announcementTimer=2;
             }
         }
         bool Stomp(Vector2 old,float x,float head)

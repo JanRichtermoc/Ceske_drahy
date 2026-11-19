@@ -14,7 +14,7 @@ public static class RailSmokeTests
     {
         var g=UnityEngine.Object.FindFirstObjectByType<RailGame>();
         Check(g!=null,"Run tests in Play Mode");
-        int[] savedBest={PlayerPrefs.GetInt("best",0),PlayerPrefs.GetInt("bestLevel1",0),PlayerPrefs.GetInt("bestLevel2",0)};bool oldMuted=g.muted;var passed=new List<string>();
+        var saved=SaveRecords();bool oldMuted=g.muted;var passed=new List<string>();
         g.enabled=false;g.muted=true;
         try
         {
@@ -23,7 +23,10 @@ public static class RailSmokeTests
             g.Damage(3);int health=g.lives;g.Damage(3);
             Check(health==2 && g.lives==health,"Invulnerability must prevent repeated damage");passed.Add("damage + invulnerability");
             g.invulnerability=0;g.Damage(3);g.invulnerability=0;g.Damage(3);
-            Check(g.mode==RailGame.Mode.Lost && g.lives==0,"Zero health must lose");passed.Add("game over");
+            Check(g.mode==RailGame.Mode.Lost && g.lives==0,"Zero health must lose");
+            Check(g.hero.gameObject.activeSelf,"The hero must stay visible on the loss screen");
+            g.position=new Vector2(52,.8f);g.velocity=Vector2.zero;Tick(g,2);
+            Check(g.lives==0 && g.chaos.medkits[0].gameObject.activeSelf,"The simulation must not collect pickups after a loss");passed.Add("game over");
             g.StartRun();g.checkpoint=1;g.position=new Vector2(65,-5);Tick(g,1);
             Check(g.lives==2 && Mathf.Abs(g.position.x-54)<.01f,"Fall must cost one life and restore checkpoint");passed.Add("fall + checkpoint respawn");
             g.StartRun();Tick(g,4);Field("jumpBuffer").SetValue(g,.14f);
@@ -43,7 +46,9 @@ public static class RailSmokeTests
             g.StartRun();g.position=new Vector2(84,3.1f);Tick(g,2);float x=g.position.x;Tick(g,45);
             Check(g.grounded && Mathf.Abs(g.position.x-x)>.01f,"Moving train must carry the player");passed.Add("moving train carry");
             g.StartRun();g.position=new Vector2(5.5f,.12f);Tick(g,2);
-            Check(g.velocity.y>16,"Suitcase must launch the player");passed.Add("suitcase launch");
+            Check(g.velocity.y>16,"Suitcase must launch the player");
+            Field("jumpReleased").SetValue(g,true);Tick(g,1);
+            Check(g.velocity.y>15 && !(bool)Field("jumpReleased").GetValue(g),"Releasing jump must not cut a suitcase launch");passed.Add("suitcase launch");
             Field("jumpBuffer").SetValue(g,.14f);Tick(g,1);
             Check(!g.chaos.airJumpReady && g.velocity.y>10,"One extra jump is available in the air");passed.Add("double jump");
             g.StartRun();g.chaos.Dash();g.Damage(3);Tick(g,1);
@@ -63,10 +68,12 @@ public static class RailSmokeTests
                 }
                 g.Step(1f/120);
             }
-            Check(g.mode==RailGame.Mode.Won && visited.Count==13 && g.checkpoint==2,"Entire track must be reachable");
-            Check(g.score>0,"Tickets must be collected");passed.Add("13 platforms + both checkpoints + finish + tickets");
+            Check(g.mode==RailGame.Mode.Won && visited.Count==g.world.platforms.Count && g.checkpoint==g.Level.CheckpointCount,"Entire track must be reachable");
+            Check(g.score>0,"Tickets must be collected");
+            Check(g.newRecord && Mathf.Abs(PlayerPrefs.GetFloat(g.Level.TimeKey)-g.elapsed)<.001f,"Finishing must store the best time");
+            passed.Add(visited.Count+" platforms + checkpoints + finish + tickets + best time");
             g.FinishAction();
-            Check(g.LevelIndex==1 && g.mode==RailGame.Mode.Playing && g.lives==3,"Finishing Olomouc advances to the depot");
+            Check(g.LevelIndex==1 && g.mode==RailGame.Mode.Playing && g.lives==g.Level.Lives,"Finishing Olomouc advances to the next route");
             passed.Add("campaign advancement");
 
             Field("axis").SetValue(g,0f);
@@ -79,17 +86,40 @@ public static class RailSmokeTests
             for(int level=1;level<CeskeDrahy.RailLevel.All.Length;level++)
             {
                 g.StartLevel(level);
-                Check(g.lives==(level==2?2:3),"Advanced route starting health");
+                Check(g.lives==g.Level.Lives,"Advanced route starting health");
                 Check(TraverseAdvanced(g),"Every roof and checkpoint must be reachable on route "+level);
                 passed.Add("advanced route "+level);
             }
+            g.StartLevel(0);g.Damage(3);g.Menu();
+            Check(g.mode==RailGame.Mode.Menu && (float)Field("shake").GetValue(g)==0 && g.chaos.infection==0,"Returning to the menu clears the run");passed.Add("menu cleanup");
             string result="PASS ("+passed.Count+"): "+string.Join("; ",passed);Debug.Log(result);return result;
         }
         finally
         {
-            PlayerPrefs.SetInt("best",savedBest[0]);PlayerPrefs.SetInt("bestLevel1",savedBest[1]);PlayerPrefs.SetInt("bestLevel2",savedBest[2]);PlayerPrefs.Save();g.muted=oldMuted;
+            RestoreRecords(saved);g.muted=oldMuted;
             g.StartLevel(0);g.Menu();g.enabled=true;g.hero.gameObject.SetActive(true);Field("axis").SetValue(g,0f);
         }
+    }
+    /// <summary>Tests finish routes for real; the player's own records are restored afterwards.</summary>
+    static Dictionary<string,object> SaveRecords()
+    {
+        var saved=new Dictionary<string,object>();
+        foreach(var level in RailLevel.All)
+        {
+            saved[level.ScoreKey]=PlayerPrefs.HasKey(level.ScoreKey)?(object)PlayerPrefs.GetInt(level.ScoreKey):null;
+            saved[level.TimeKey]=PlayerPrefs.HasKey(level.TimeKey)?(object)PlayerPrefs.GetFloat(level.TimeKey):null;
+        }
+        return saved;
+    }
+    static void RestoreRecords(Dictionary<string,object> saved)
+    {
+        foreach(var entry in saved)
+        {
+            if(entry.Value==null)PlayerPrefs.DeleteKey(entry.Key);
+            else if(entry.Value is int score)PlayerPrefs.SetInt(entry.Key,score);
+            else PlayerPrefs.SetFloat(entry.Key,(float)entry.Value);
+        }
+        PlayerPrefs.Save();
     }
     static bool TraverseAdvanced(RailGame game)
     {
@@ -122,7 +152,7 @@ public static class RailSmokeTests
             Tick(game,1);
             if(game.lives<lives)return false;
         }
-        return game.mode==RailGame.Mode.Won && game.checkpoint==2 && visited.Count==game.world.platforms.Count;
+        return game.mode==RailGame.Mode.Won && game.checkpoint==game.Level.CheckpointCount && visited.Count==game.world.platforms.Count;
     }
 
 }
