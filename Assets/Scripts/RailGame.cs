@@ -129,7 +129,8 @@ namespace CeskeDrahy
         public void StompLaunch()
         {
             bool jumping=jumpHeld || jumpBuffer>0;
-            Launch(jumping?StompJump:StompBounce,jumping);
+            // Only a held jump is cut on release; a buffered tap still gets the full stomp jump.
+            Launch(jumping?StompJump:StompBounce,jumpHeld);
             invulnerability=Mathf.Max(invulnerability,.3f);
         }
         public void ApplyQuality(){QualitySettings.shadows=lowQuality?ShadowQuality.Disable:ShadowQuality.All;QualitySettings.antiAliasing=lowQuality?0:4;if(post)post.enabled=!lowQuality;}
@@ -242,8 +243,7 @@ namespace CeskeDrahy
             // The double jump never lowers an ongoing rise; an early press stays buffered until it would help.
             else if(jumpBuffer>0 && !grounded && velocity.y<AirJumpSpeed && !NearLanding() && chaos.AirJump())
             {velocity.y=AirJumpSpeed;jumpBuffer=0;jumpCut=true;AirJumpCount++;audioMix.Spring();}
-            if(chaos.dash>0){velocity.y=0;jumpCut=false;}
-            else velocity.y=RailMotor.Vertical(velocity.y,ref jumpCut,jumpHeld,fastFall,dt);
+            velocity.y=RailMotor.Vertical(velocity.y,ref jumpCut,jumpHeld,fastFall,dt);
             UpdateWind();
             var old=position;var next=position+velocity*dt;
             next.x+=wind*dt*(grounded?.45f:1);
@@ -258,8 +258,9 @@ namespace CeskeDrahy
                 // Below the roof every platform is solid down to the ground.
                 if(old.y<p.top-.06f && next.y<p.top-.06f)
                 {
-                    bool fromLeft=old.x+radius<=p.Left+.03f && next.x+radius>p.Left;
-                    bool fromRight=old.x-radius>=p.Right-.03f && next.x-radius<p.Right;
+                    // Edges are compared where they were last step, so a wagon swaying into the player counts as a hit too.
+                    bool fromLeft=old.x+radius<=p.Left-p.delta+.03f && next.x+radius>p.Left;
+                    bool fromRight=old.x-radius>=p.Right-p.delta-.03f && next.x-radius<p.Right;
                     if(!fromLeft && !fromRight)continue;
                     // Ledge assist: just missing the edge by a few centimetres still lands on the roof.
                     if(next.y>=p.top-LedgeAssist && velocity.y<=3){next.y=p.top;velocity.y=0;grounded=true;standing=p;continue;}
@@ -385,7 +386,8 @@ namespace CeskeDrahy
         void UpdateCamera(float dt)
         {
             shake=Mathf.Max(0,shake-dt);
-            float aspect=Mathf.Max(.4f,view.aspect);
+            float aspect=view.aspect;
+            if(!(aspect>.4f))aspect=.4f; // also catches NaN from a zero-height window
             // Keep at least ~9 m visible ahead and behind on narrow windows.
             float size=mode==Mode.Menu?Mathf.Max(7.5f,13.3f/aspect):Mathf.Max(PlaySize,9.2f/aspect);
             view.orthographicSize=Mathf.Lerp(view.orthographicSize,size,1-Mathf.Exp(-dt*8));
