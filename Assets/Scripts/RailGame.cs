@@ -7,6 +7,8 @@ namespace CeskeDrahy
     {
         public enum Mode { Menu, Loading, Playing, Paused, Won, Lost }
         const float FixedStep = 1f/120;
+        /// <summary>Motor constants, shared with the level reachability tests.</summary>
+        public const float RunSpeed = 7.8f, JumpSpeed = 13.6f, AirJumpSpeed = 12.3f, Gravity = 28;
         public Mode mode = Mode.Menu;
         public RailWorld world;
         public RailChaos chaos;
@@ -187,13 +189,13 @@ namespace CeskeDrahy
             if(standing!=null)position.x+=standing.delta;
             coyote=grounded?.11f:coyote-dt;jumpBuffer-=dt;
             if(chaos.dash>0)velocity.x=(Mathf.Abs(axis)>.1f?Mathf.Sign(axis):playerRig.Direction)*16;
-            else if(knockback<=0)velocity.x=Mathf.MoveTowards(velocity.x,axis*7.8f*chaos.SpeedMultiplier,(grounded?55:32)*dt);
-            if(jumpBuffer>0 && coyote>0){velocity.y=13.6f;grounded=false;standing=null;coyote=0;jumpBuffer=0;jumpCut=true;audioMix.Jump();}
-            else if(jumpBuffer>0 && !grounded && !NearLanding() && chaos.AirJump()){velocity.y=12.3f;jumpBuffer=0;jumpCut=true;audioMix.Spring();}
+            else if(knockback<=0)velocity.x=Mathf.MoveTowards(velocity.x,axis*RunSpeed*chaos.SpeedMultiplier,(grounded?55:32)*dt);
+            if(jumpBuffer>0 && coyote>0){velocity.y=JumpSpeed;grounded=false;standing=null;coyote=0;jumpBuffer=0;jumpCut=true;audioMix.Jump();}
+            else if(jumpBuffer>0 && !grounded && !NearLanding() && chaos.AirJump()){velocity.y=AirJumpSpeed;jumpBuffer=0;jumpCut=true;audioMix.Spring();}
             // Only the player's own jump is shortened; springs, stomps and knockback keep their launch.
             if(jumpReleased){if(jumpCut && velocity.y>5)velocity.y=5;jumpReleased=false;}
             if(velocity.y<=0)jumpCut=false;
-            velocity.y-=28*dt;
+            velocity.y-=Gravity*dt;
             UpdateWind();
             var old=position;var next=position+velocity*dt;
             next.x+=wind*dt*(grounded?.45f:1);

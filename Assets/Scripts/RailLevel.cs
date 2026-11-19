@@ -23,6 +23,7 @@ namespace CeskeDrahy
         int[] stations;
 
         public float Finish => Platforms[Platforms.Length-1].x+4;
+        public override string ToString()=>Name;
         public string TimeKey => "bestTime_"+Id;
         /// <summary>Platform indices of station platforms: start, checkpoints and finish.</summary>
         public int[] Stations
@@ -66,7 +67,7 @@ namespace CeskeDrahy
                 Kinds="STTTSTTTSTTTS",
                 Platforms=new[]{P(0,16,.12f),P(15,10,2.25f),P(28,10,2.6f),P(42,11,2.3f),P(56,12,.8f),P(70,10,2.7f),P(84,10,3.1f,.7f),P(98,10,2.65f),P(112,12,1),P(126,10,3),P(140,10,3.5f,.6f),P(154,10,2.8f),P(170,18,1.2f)},
                 Inspectors=new[]{32f,88f,144f},Birds=new[]{25f,39f,76f,91f,132f,148f,159f},
-                Street=new[]{44f,76f,100f,130f,158f},Medkits=new[]{52f,94f,110f,167f},Snacks=new[]{18f,81f,138f},Springs=new[]{5.5f,57.5f,113f}
+                Street=new[]{44f,73f,100f,130f,158f},Medkits=new[]{52f,94f,110f,167f},Snacks=new[]{18f,81f,138f},Springs=new[]{5.5f,57.5f,113f}
             },
             new RailLevel
             {
@@ -88,7 +89,7 @@ namespace CeskeDrahy
                 Kinds="STTCSTCTSCCTS",
                 Platforms=new[]{P(0,15,.12f),P(16,9,2.4f),P(29,8.5f,3,.6f),P(42,9,3.6f),P(56,12,1),P(70,9,3),P(83,8,4.2f),P(97,9,2.9f,.8f),P(111,12,1.1f),P(125,8.5f,3.6f,.7f),P(139,8,4.4f),P(153,9,3.1f),P(169,17,1.2f)},
                 Inspectors=new[]{19f,86f,150f},Birds=new[]{24f,38f,66f,92f,121f,134f,146f},
-                Street=new[]{31f,44f,72f,99f,127f,155f},Medkits=new[]{53f,81f,108f,141f,165f},Snacks=new[]{40f,114f,160f},Springs=new[]{5.5f,58f,113f}
+                Street=new[]{31f,44f,72f,99f,127f,155f},Medkits=new[]{53f,81f,108f,141f,165f},Snacks=new[]{40f,114f,164f},Springs=new[]{5.5f,58f,113f}
             },
             new RailLevel
             {
