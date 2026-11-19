@@ -1,12 +1,26 @@
 # České dráhy — Olomoucký chaos
 
-2,5D arkádová plošinovka v **Unity 6000.6.8f1**. Carl „CJ“ Johnson se snaží stihnout poslední spoj. Cestou proskáče **deset skutečných železničních stanic Olomouce** po střechách vagonů, cisteren a kontejnerů. Pod nohama mu přitom překážejí revizoři, holubi, pára a podchodoví alchymisté s obřími injekcemi.
+**[⬇ Stáhnout hru pro Windows (ZIP)](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/CeskeDrahy-Windows.zip)** · [macOS (Apple Silicon)](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/CeskeDrahy-macOS.zip) · [všechna vydání](https://github.com/JanRichtermoc/Ceske_drahy/releases)
 
 ![Hlavní menu – odjezdová tabule](docs/menu.png)
 
-## Tratě
+## Popis hry
 
-Názvy odpovídají stanicím a zastávkám v Olomouci (cs.wikipedia, kategorie *Železniční stanice v Olomouci*). Kulisy jsou stylizované, ne přesné modely.
+*České dráhy — Olomoucký chaos* je 2,5D arkádová plošinovka pro jednoho hráče. Carl „CJ“ Johnson se snaží stihnout poslední spoj. Cestou proskáče **deset skutečných železničních stanic Olomouce** po střechách vagonů, cisteren a kontejnerů. Pod nohama mu přitom překážejí revizoři, holubi, pára a podchodoví alchymisté s obřími injekcemi.
+
+**Cíl:** projet každou trať od startovního nástupiště do cíle co nejrychleji. Po dojetí se ukáže **jízdenka s časem** a osobním rekordem trati (razítko „NOVÝ REKORD“), dále body, sebrané jízdenky, odrazy a nejvyšší kombo. Rekordy se ukládají lokálně a zobrazují se v menu na odjezdové tabuli.
+
+**Pravidla:**
+- Každá trať má dva checkpointy na nástupištích. Při příjezdu se návěstidlo přepne na zelenou a po pádu se hráč vrací sem.
+- Na začátku má hráč 3 životy, na poslední trati 2. Pád mezi vagony nebo zásah stojí jeden život. Po ztrátě všech životů „ujel vlak“ a trať se opakuje.
+- Jízdenky a skok protivníkům na hlavu dávají body. Rychlý sled akcí zvyšuje násobič až na ×5.
+- Varování před útoky: žlutá kontrolka znamená, že revizor hodí brašnu, zelená ohlašuje létající injekci. Oranžové blikání roštu varuje před párou a v Nemilanech výstraha ohlašuje poryv protivětru.
+- Injekce způsobí nákazu, která zpomaluje. Lékárnička ji vyléčí a vrátí život. Tvarůžek dá krátké zrychlení a růžový kufr vystřelí vysoko.
+- Ztráta zaostření okna hru pozastaví a čas se během pauzy nepočítá.
+
+### Tratě
+
+Názvy odpovídají stanicím a zastávkám v Olomouci (cs.wikipedia, kategorie *Železniční stanice v Olomouci*). Kulisy jsou stylizované, nejde o přesné modely. Všechny tratě jsou odemčené hned.
 
 | # | Stanice | Kulisy a novinka | Obtížnost |
 |---|---|---|---|
@@ -21,43 +35,59 @@ Názvy odpovídají stanicím a zastávkám v Olomouci (cs.wikipedia, kategorie 
 | 9 | Nemilany | pole a větrolamy při západu slunce, nárazy protivětru | ●●●● |
 | 10 | Olomouc přednádraží | noční seřadiště, finále se dvěma životy | ●●●●● |
 
-Všechny tratě jsou odemčené hned. Každá má dva checkpointy, které se při příjezdu ohlásí zeleným návěstidlem. Po dojetí do cíle se ukáže **jízdenka s časem**, osobním rekordem trati (razítko „NOVÝ REKORD“), body, jízdenkami, odrazy a kombem. Rekordy se ukládají lokálně a zobrazují se v menu.
-
-![Výsledková jízdenka](docs/results.png)
+![Olomouc město](docs/gameplay.png)
 
 ## Ovládání
 
+Hra se ovládá klávesnicí; v menu jde použít i myš.
+
 | Klávesa | Akce |
 |---|---|
-| A / D nebo ← / → | pohyb |
+| A / D nebo ← / → | pohyb doleva / doprava |
 | Mezerník, W nebo ↑ | skok; další stisk ve vzduchu = dvojskok; krátký stisk = nižší skok |
 | Shift | rychlý úhyb (krátce nezranitelný, pak se nabíjí) |
-| R | návrat na checkpoint; na výsledkové obrazovce restart trati |
-| Esc | pauza / pokračování; na výsledkové obrazovce hlavní menu |
+| R | návrat na poslední checkpoint; na výsledkové obrazovce opakování trati |
+| Esc | pauza / pokračování; na výsledkové obrazovce návrat do menu; zavření nastavení |
 | Enter | start vybrané trati / další trať / nový pokus |
-| ↑ / ↓ (W / S) v menu | výběr trati na odjezdové tabuli |
+| ↑ / ↓ (W / S) v menu | výběr trati na odjezdové tabuli (také najetím myší) |
 | M | zapnutí / vypnutí zvuku |
+| Alt + Enter | celá obrazovka / okno (také v Nastavení) |
 
-Sbírej jízdenky a skákej protivníkům na hlavu. Rychlý sled akcí zvyšuje násobič až na ×5. Žlutá kontrolka znamená, že revizor hodí brašnu, zelená ohlašuje létající injekci. Oranžové blikání u roštu varuje před párou. V Nemilanech nejdřív zabliká větrná výstraha, pak přijde poryv. Nákaza zpomaluje a lékárnička ji vyléčí a vrátí život. Pád stojí jeden život. Ztráta zaostření okna hru pozastaví.
+![Výsledková jízdenka](docs/results.png)
 
-![Olomouc město](docs/gameplay.png)
+## Postup spuštění
 
-## Spuštění
+### Windows (doporučeno)
+1. Stáhni **[CeskeDrahy-Windows.zip](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/CeskeDrahy-Windows.zip)** ze stránky [Releases](https://github.com/JanRichtermoc/Ceske_drahy/releases).
+2. Klikni na ZIP pravým tlačítkem a zvol **Extrahovat vše…**. Hra nejde spustit přímo z neotevřeného ZIPu.
+3. Ve složce `CeskeDrahy` spusť **`CeskeDrahy.exe`**. Soubory `UnityPlayer.dll`, `CeskeDrahy_Data` a `MonoBleedingEdge` musí zůstat vedle exe.
+4. Build není podepsaný, takže Windows SmartScreen může ukázat „Systém Windows ochránil váš počítač“. Klikni na **Další informace → Přesto spustit**.
 
-### Windows (hotový build)
-1. Rozbal `CeskeDrahy-Windows.zip`. Vzniká v `Builds/` po sestavení (viz níže), do Gitu se binárky neukládají.
-2. Ve složce `CeskeDrahy` spusť `CeskeDrahy.exe`. Složka `CeskeDrahy_Data`, `UnityPlayer.dll` a `MonoBleedingEdge` musí zůstat vedle exe.
-3. Při prvním spuštění může Windows SmartScreen zobrazit varování „Systém Windows ochránil váš počítač“, protože build není podepsaný. Klikni na **Další informace → Přesto spustit**.
+Požadavky: Windows 10 nebo 11 (64 bit), grafická karta s DirectX 11, asi 200 MB volného místa. Instalace ani připojení k internetu nejsou potřeba.
 
-Požadavky: Windows 10/11 x64, grafika s DirectX 11. Okno lze měnit, celá obrazovka jde zapnout v Nastavení nebo přes Alt+Enter.
+### macOS (Apple Silicon)
+1. Stáhni a rozbal [CeskeDrahy-macOS.zip](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/CeskeDrahy-macOS.zip).
+2. Aplikace není notarizovaná. Při prvním spuštění na ni klikni pravým tlačítkem a zvol **Otevřít**, nebo v Terminálu spusť `xattr -dr com.apple.quarantine CeskeDrahy.app`.
 
-### macOS
-`Builds/CeskeDrahy.app` (Apple Silicon) po sestavení přes **České dráhy → Build macOS**.
+### Ze zdrojového kódu v Unity
+1. Naklonuj repozitář: `git clone https://github.com/JanRichtermoc/Ceske_drahy.git`.
+2. V Unity Hub zvol **Add → Add project from disk**, vyber složku a otevři ji v Unity **6000.6.8f1**. Při prvním otevření se importují balíčky a assety, což trvá několik minut.
+3. Otevři scénu `Assets/Scenes/OlomoucHlavniNadrazi.unity` a stiskni **Play**.
+4. Vlastní build: menu **České dráhy → Build Windows** vytvoří `Builds/Windows/CeskeDrahy/CeskeDrahy.exe` a `Builds/CeskeDrahy-Windows.zip`, **České dráhy → Build macOS** vytvoří `Builds/CeskeDrahy.app`. Windows build potřebuje v Unity Hub modul *Windows Build Support (Mono)*.
 
-### Z Unity editoru
-1. V Unity Hub přidej tuto složku a otevři ji v Unity **6000.6.8f1**.
-2. Otevři `Assets/Scenes/OlomoucHlavniNadrazi.unity` a stiskni **Play**.
-3. Sestavení: menu **České dráhy → Build Windows** (výstup `Builds/Windows/CeskeDrahy/CeskeDrahy.exe` a `Builds/CeskeDrahy-Windows.zip`) nebo **České dráhy → Build macOS**. Pro Windows build je potřeba modul *Windows Build Support (Mono)*.
+## Použité technologie
+
+| Oblast | Technologie |
+|---|---|
+| Herní engine | **Unity 6000.6.8f1**, Built-in Render Pipeline, lineární barevný prostor |
+| Jazyk | **C#** (.NET Standard 2.1, Mono) |
+| Herní logika | vlastní kinematický pohyb s pevným krokem 120 Hz a interpolací vykreslení; svět, tratě a kulisy generované z dat za běhu (`RailLevel`, `RailWorld`, `OlomoucBackdrops`) |
+| Grafika | vlastní shadery v HLSL/Cg: `Railway/Surface` (PBR, rim světlo, procedurální patina, emisní mapy, triplanární mapování), `Railway/Foliage` (vítr), `Railway/Water`, obloha s mraky a hvězdami; post-processing `RailPost` (bloom, ACES, barevné ladění, vinětace) |
+| Rozhraní | Unity IMGUI s vlastním vykreslováním (odjezdová tabule, HUD, jízdenka), fonty Barlow a Barlow Condensed |
+| 3D modely | **glTFast** (import glTF/GLB), **Blender 5.2** (headless Python skripty v `Tools/blender`), **Sketchfab Download API** (`Tools/sketchfab_download.py`) |
+| Testy | **Unity Test Framework** (NUnit), EditMode a Play Mode testy |
+| Nástroje | Unity CLI / MCP Pipeline (`Tools/unity_mcp.py`) pro řízení editoru, testy a buildy; Git a GitHub |
+| Assety | modely Sketchfab (CC BY), textury ambientCG (CC0), zvuky Freesound (CC0), syntetický hlas Piper |
 
 ## Testy
 
@@ -72,16 +102,7 @@ Z příkazové řádky přes Unity CLI (MCP Pipeline):
 ~/.unity/bin/unity cmd test status
 ```
 
-## Použité technologie
-
-- **Unity 6000.6.8f1**, C#, Built-in Render Pipeline, lineární barevný prostor, IMGUI rozhraní.
-- Svět, tratě a kulisy se generují z dat za běhu (`RailLevel`, `RailWorld`, `OlomoucBackdrops`). Pohyb má pevný krok 120 Hz s interpolací vykreslení pro monitory 75–165 Hz.
-- Vlastní shadery: `Railway/Surface` (PBR, rim světlo podle oblohy, procedurální patina, kontaktní stín, emisní mapy, triplanární mapování v metrech), `Railway/Foliage` (vítr), `Railway/Water` (řeka Morava), obloha s mraky a hvězdami, post-process `RailPost` (bloom, ACES, barevné ladění podle denní doby, vinětace).
-- **glTFast** pro import modelů, **Blender 5.2** (headless skripty v `Tools/blender`) pro úpravu modelů, **Sketchfab Download API** (`Tools/sketchfab_download.py`).
-- **Unity CLI / MCP Pipeline** (`Tools/unity_mcp.py`) pro řízení editoru, testy a buildy.
-- Fonty Barlow a Barlow Condensed (OFL), PBR textury ambientCG (CC0), zvuky z Freesound (CC0) a hlas Piper.
-
-## Struktura
+## Struktura projektu
 
 ```
 Assets/Scripts        herní kód (assembly CeskeDrahy)
@@ -119,7 +140,7 @@ Ke stažení modelů slouží oficiální Sketchfab Download API. Klíč se zad�
 
 ```sh
 SKETCHFAB_API_TOKEN=... python3 Tools/sketchfab_download.py a932f7c3850643fd92dadad7f5771d6c --output .local/tatra
-"/Applications/Blender.app/Contents/MacOS/Blender" --background --factory-startup \
+blender --background --factory-startup \
   --python Tools/blender/prop_import.py -- .local/tatra/scene.gltf Assets/Resources/Models/Props/tatra_t3.glb length 14.6 26000 512
 ```
 
