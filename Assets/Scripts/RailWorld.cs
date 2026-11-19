@@ -265,12 +265,13 @@ namespace CeskeDrahy
             {
                 float height=Level.Theme==Theme.MainStation?5.2f:Surface(x,3.6f)+1.95f;
                 var b=Group("Holub",new Vector3(x,height,0));
+                birds.Add(b);birdOrigins.Add(new Vector2(x,height));
+                if(Pigeon(b))continue;
                 Box("Body",Vector3.zero,new Vector3(.55f,.3f,.33f),steel,b,PrimitiveType.Sphere);
                 Box("Head",new Vector3(-.3f,.13f,0),Vector3.one*.24f,navy,b,PrimitiveType.Sphere);
                 Box("Beak",new Vector3(-.45f,.12f,0),new Vector3(.17f,.07f,.1f),gold,b);
                 Box("Left wing",new Vector3(0,.08f,-.3f),new Vector3(.55f,.065f,.58f),dark,b);
                 Box("Right wing",new Vector3(0,.08f,.3f),new Vector3(.55f,.065f,.58f),dark,b);
-                birds.Add(b);birdOrigins.Add(new Vector2(x,height));
             }
             foreach(float x in Level.Inspectors)
             {
@@ -548,9 +549,32 @@ namespace CeskeDrahy
             wrapper.localPosition=new Vector3(0,top-1.55f,0);
             return true;
         }
+        readonly Dictionary<Transform,RailActor> actors=new Dictionary<Transform,RailActor>();
+        /// <summary>The animated character standing at a Person root, or null for the primitive fallback.</summary>
+        public RailActor ActorOf(Transform person)=>person && actors.TryGetValue(person,out var actor)?actor:null;
+        public void PauseActors(bool paused){foreach(var actor in actors.Values)actor.SetPaused(paused);}
+        static GameObject pigeonPrefab;
+        /// <summary>Flying pigeon model (Sketchfab CC BY) with its looping flap; false when the model is missing.</summary>
+        bool Pigeon(Transform bird)
+        {
+            if(!pigeonPrefab)pigeonPrefab=Resources.Load<GameObject>("Models/Animals/Holub/Holub");
+            if(!pigeonPrefab)return false;
+            var model=Object.Instantiate(pigeonPrefab,bird,false);
+            model.name="Holub / Sketchfab CC BY";
+            // A real pigeon is ~0.4 m; shown 1.6× so the hazard reads at gameplay zoom (matches its hitbox).
+            model.transform.localPosition=new Vector3(0,-.12f,0);model.transform.localScale=Vector3.one*1.6f;
+            RailMaterials.DressCharacter(model,"Models/Animals/Holub/Textures/");
+            var animation=model.GetComponent<Animation>();
+            if(animation&&animation.clip){animation.wrapMode=WrapMode.Loop;animation.Play();animation[animation.clip.name].normalizedTime=Random.value;}
+            return true;
+        }
         public Transform Person(string name,Vector3 position,bool inspector=false,bool street=false)
         {
-            var p=Group(name,position); var jacket=street?Mat("Patched coat","#6C6750"):inspector?navy:Mat("Hero jacket","#E48A3C");
+            var p=Group(name,position);
+            // Animated models first (the alchemist's dark suit is brightened a little to read at night).
+            var actor=inspector?RailActor.Create("Revizor",p):street?RailActor.Create("Alchymista",p,1.5f):null;
+            if(actor!=null){actors[p]=actor;return p;}
+            var jacket=street?Mat("Patched coat","#6C6750"):inspector?navy:Mat("Hero jacket","#E48A3C");
             Box("Torso",new Vector3(0,1.06f,0),new Vector3(.52f,.65f,.35f),jacket,p,PrimitiveType.Capsule);
             Box("Shirt",new Vector3(.02f,1.2f,-.18f),new Vector3(.12f,.35f,.025f),cream,p);
             Box("Neck",new Vector3(0,1.44f,0),new Vector3(.18f,.23f,.18f),skin,p,PrimitiveType.Cylinder);
@@ -718,8 +742,20 @@ namespace CeskeDrahy
             for(int i=0;i<birds.Count;i++)
             {
                 birds[i].position=new Vector3(birdOrigins[i].x+Mathf.Sin(time*.8f+i)*2.8f,birdOrigins[i].y+Mathf.Sin(time*1.7f+i)*1.1f,0);
-                birds[i].GetChild(3).localRotation=Quaternion.Euler(Mathf.Sin(time*17+i)*38,0,0);
-                birds[i].GetChild(4).localRotation=Quaternion.Euler(-Mathf.Sin(time*17+i)*38,0,0);
+                var model=birds[i].childCount==1?birds[i].GetChild(0):null;
+                if(model)
+                {
+                    // Face the flight direction (no moonwalk); flap hard while climbing, glide while sinking.
+                    float vx=Mathf.Cos(time*.8f+i),vy=Mathf.Cos(time*1.7f+i);
+                    birds[i].rotation=Quaternion.Slerp(birds[i].rotation,Quaternion.Euler(0,vx>=0?-20:200,vy*12),1-Mathf.Exp(-dt*6));
+                    var animation=model.GetComponent<Animation>();
+                    if(animation&&animation.clip)animation[animation.clip.name].speed=vy>0?1.35f:.55f;
+                }
+                else
+                {
+                    birds[i].GetChild(3).localRotation=Quaternion.Euler(Mathf.Sin(time*17+i)*38,0,0);
+                    birds[i].GetChild(4).localRotation=Quaternion.Euler(-Mathf.Sin(time*17+i)*38,0,0);
+                }
             }
         }
     }

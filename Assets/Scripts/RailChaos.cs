@@ -9,7 +9,7 @@ namespace CeskeDrahy
         public sealed class Pop { public Vector2 at;public string text;public float life;public Color color; }
         public readonly Pop[] pops=new Pop[18];
         public readonly Transform[] streetEnemies,medkits,cheeses,springs;
-        readonly Transform[] needles=new Transform[12],warning,aura=new Transform[5];
+        readonly Transform[] needles=new Transform[12],warning,aura=new Transform[5],syringes;
         readonly Vector2[] needleVelocity=new Vector2[12];
         readonly float[] needleLife=new float[12],streetTime,streetStun,inspectorStun,birdStun,springCooldown;
         readonly bool[] streetThrown,streetCalled;
@@ -25,7 +25,7 @@ namespace CeskeDrahy
         {
             game=owner;world=owner.world;
             var level=world.Level;
-            streetEnemies=new Transform[level.Street.Length];warning=new Transform[level.Street.Length];
+            streetEnemies=new Transform[level.Street.Length];warning=new Transform[level.Street.Length];syringes=new Transform[level.Street.Length];
             streetTime=new float[level.Street.Length];streetStun=new float[level.Street.Length];
             streetThrown=new bool[level.Street.Length];streetCalled=new bool[level.Street.Length];
             medkits=new Transform[level.Medkits.Length];medkitPositions=new Vector3[level.Medkits.Length];
@@ -41,6 +41,7 @@ namespace CeskeDrahy
                 var roof=world.PlatformAt(xs[i]);if(roof!=null)man.SetParent(roof.root,true);
                 streetEnemies[i]=man;
                 var syringe=Syringe("Obří injekce",man);syringe.localPosition=new Vector3(-.6f,1.1f,-.12f);syringe.localScale=Vector3.one*1.4f;
+                syringes[i]=syringe;
                 warning[i]=world.Box("Pozor na injekci",new Vector3(0,2.4f,0),Vector3.one*.3f,world.Mat("Lime serum","#B4EB43"),man,PrimitiveType.Sphere);
                 warning[i].gameObject.SetActive(false);
                 if(i==0||i==2)
@@ -86,6 +87,9 @@ namespace CeskeDrahy
             {aura[i]=world.Box("Cartoon infection bubble",Vector3.zero,Vector3.one*.12f,world.Mat("Lime serum","#B4EB43"),null,PrimitiveType.Sphere);aura[i].gameObject.SetActive(false);}
         }
         float Surface(float x)=>world.Surface(x);
+        /// <summary>Stunned: the animated character falls over, the primitive figure tips over.</summary>
+        void KnockDown(Transform person,float tilt){var actor=world.ActorOf(person);if(actor!=null)actor.Set(RailActor.Mode.Knockdown);else person.rotation=Quaternion.Euler(0,0,tilt);}
+        void Stand(Transform person){var actor=world.ActorOf(person);if(actor!=null)actor.Set(RailActor.Mode.Idle);else person.rotation=Quaternion.identity;}
         /// <summary>A pickup floating above the roof at x, parented to that roof so it rides a moving wagon.</summary>
         Transform OnRoof(string name,float x,float height)
         {
@@ -109,8 +113,8 @@ namespace CeskeDrahy
             foreach(var p in pops)p.life=0;
             foreach(var t in medkits)t.gameObject.SetActive(true);foreach(var t in cheeses)t.gameObject.SetActive(true);
             for(int i=0;i<world.birds.Count;i++){birdStun[i]=0;world.birds[i].gameObject.SetActive(true);}
-            for(int i=0;i<world.inspectors.Count;i++){inspectorStun[i]=0;world.inspectors[i].rotation=Quaternion.identity;}
-            for(int i=0;i<streetEnemies.Length;i++){streetTime[i]=i*.8f;streetStun[i]=0;streetThrown[i]=streetCalled[i]=false;streetEnemies[i].rotation=Quaternion.identity;warning[i].gameObject.SetActive(false);}
+            for(int i=0;i<world.inspectors.Count;i++){inspectorStun[i]=0;Stand(world.inspectors[i]);}
+            for(int i=0;i<streetEnemies.Length;i++){streetTime[i]=i*.8f;streetStun[i]=0;streetThrown[i]=streetCalled[i]=false;Stand(streetEnemies[i]);warning[i].gameObject.SetActive(false);}
             for(int i=0;i<springs.Length;i++)springCooldown[i]=0;
             ClearTransient();
         }
@@ -162,7 +166,7 @@ namespace CeskeDrahy
             if(game.grounded)airJumpReady=true;
             foreach(var p in pops)if(p.life>0){p.life-=dt;p.at.y+=dt*.9f;}
             for(int i=0;i<birdStun.Length;i++)if(birdStun[i]>0){birdStun[i]-=dt;if(birdStun[i]<=0)world.birds[i].gameObject.SetActive(true);}
-            for(int i=0;i<inspectorStun.Length;i++)if(inspectorStun[i]>0){inspectorStun[i]-=dt;if(inspectorStun[i]<=0)world.inspectors[i].rotation=Quaternion.identity;}
+            for(int i=0;i<inspectorStun.Length;i++)if(inspectorStun[i]>0){inspectorStun[i]-=dt;if(inspectorStun[i]<=0)Stand(world.inspectors[i]);}
             announcementTimer-=dt;
             if(announcementTimer<=0)
             {
@@ -191,18 +195,26 @@ namespace CeskeDrahy
         {
             if(inspectorStun[i]>0)return true;var p=world.inspectors[i].position;
             if(!Stomp(old,p.x,p.y+1.9f))return false;
-            inspectorStun[i]=6;world.inspectors[i].rotation=Quaternion.Euler(0,0,75);return true;
+            inspectorStun[i]=6;KnockDown(world.inspectors[i],75);return true;
         }
         public void AfterMove(float dt,Vector2 old)
         {
             for(int i=0;i<streetEnemies.Length;i++)
             {
                 var man=streetEnemies[i];
-                if(streetStun[i]>0){streetStun[i]-=dt;warning[i].gameObject.SetActive(false);if(streetStun[i]<=0)man.rotation=Quaternion.identity;continue;}
-                if(Stomp(old,man.position.x,man.position.y+2)){streetStun[i]=6;man.rotation=Quaternion.Euler(0,0,-75);continue;}
+                var actor=world.ActorOf(man);
+                if(actor!=null)
+                {
+                    actor.Face(game.position.x,dt);
+                    // The syringe sits in the right hand of the animated alchemist.
+                    if(actor.Hand)syringes[i].position=actor.Hand.position+Vector3.up*.05f;
+                }
+                if(streetStun[i]>0){streetStun[i]-=dt;warning[i].gameObject.SetActive(false);if(streetStun[i]<=0)Stand(man);continue;}
+                if(Stomp(old,man.position.x,man.position.y+2)){streetStun[i]=6;KnockDown(man,-75);continue;}
                 float distance=Mathf.Abs(game.position.x-man.position.x);
                 if(distance>17){warning[i].gameObject.SetActive(false);continue;}
                 streetTime[i]+=dt;float phase=streetTime[i]%4.5f;bool aiming=phase>2.6f&&phase<3.5f;
+                actor?.Set(phase>3.2f&&phase<3.75f?RailActor.Mode.Throw:aiming?RailActor.Mode.Wait:RailActor.Mode.Idle);
                 warning[i].gameObject.SetActive(aiming);if(aiming)warning[i].localScale=Vector3.one*(.23f+Mathf.PingPong(game.simTime,.2f));
                 if(aiming && !streetCalled[i] && distance<12)
                 {

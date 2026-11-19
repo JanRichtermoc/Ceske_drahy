@@ -1,0 +1,11 @@
+Model Information:
+* title:	Animated-pigeon-3d-model
+* source:	https://sketchfab.com/3d-models/animated-pigeon-3d-model-f1397b88dc6744578767fa3253ac7bbc
+* author:	xyina124 (https://sketchfab.com/xyina124)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Animated-pigeon-3d-model" (https://sketchfab.com/3d-models/animated-pigeon-3d-model-f1397b88dc6744578767fa3253ac7bbc) by xyina124 (https://sketchfab.com/xyina124) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

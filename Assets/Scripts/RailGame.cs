@@ -156,6 +156,7 @@ namespace CeskeDrahy
             // The hit blink may have hidden the hero on the frame the run ended.
             if(next!=Mode.Playing)playerRig?.SetVisible(true);
             playerRig?.SetPaused(next==Mode.Paused);
+            world?.PauseActors(next==Mode.Paused);
         }
         public void StartRun()
         {
@@ -288,6 +289,13 @@ namespace CeskeDrahy
                 if(chaos.Inspector(i,old)){world.signals[i].gameObject.SetActive(false);continue;}
                 if(distance>12){world.signals[i].gameObject.SetActive(false);continue;}
                 attackTimers[i]+=dt;float cycle=attackTimers[i]%4.6f;
+                var actor=world.ActorOf(man);
+                if(actor!=null)
+                {
+                    // Wind-up while the warning lamp blinks, the throw lands on the release at 2.9 s.
+                    actor.Face(position.x,dt);
+                    actor.Set(cycle>2.55f&&cycle<3.25f?RailActor.Mode.Throw:cycle>2.1f&&cycle<2.55f?RailActor.Mode.Wait:RailActor.Mode.Idle);
+                }
                 bool warning=cycle>2.1f && cycle<2.9f;world.signals[i].gameObject.SetActive(warning);
                 if(warning)world.signals[i].localScale=Vector3.one*(.18f+Mathf.PingPong(simTime*1.3f,.2f));
                 if(cycle>=2.9f && !hasThrown[i]){Throw(man.position);hasThrown[i]=true;}

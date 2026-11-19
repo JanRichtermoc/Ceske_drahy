@@ -13,6 +13,7 @@ public sealed class RailModelImport : AssetPostprocessor
 {
     const string Characters = "Assets/Resources/Models/Characters/";
     const string Ual = "Assets/Animation/UAL/";
+    const string Animals = "Assets/Resources/Models/Animals/";
 
     /// <summary>Clip name → (take, loop). Root motion stays on the bones; the game moves the character itself.</summary>
     public static readonly Dictionary<string, (string take, bool loop)> UalClips = new Dictionary<string, (string, bool)>
@@ -53,6 +54,17 @@ public sealed class RailModelImport : AssetPostprocessor
             importer.skinWeights = ModelImporterSkinWeights.Standard;
             importer.importCameras = importer.importLights = false;
             importer.isReadable = false;
+        }
+        else if (assetPath.StartsWith(Animals))
+        {
+            // Birds play their own baked clip through the legacy Animation component (no avatar needed).
+            importer.animationType = ModelImporterAnimationType.Legacy;
+            importer.importAnimation = true;
+            importer.animationWrapMode = WrapMode.Loop;
+            importer.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
+            importer.materialLocation = ModelImporterMaterialLocation.InPrefab;
+            importer.importTangents = ModelImporterTangents.CalculateMikk;
+            importer.importCameras = importer.importLights = false;
         }
         else if (assetPath.StartsWith(Ual))
         {

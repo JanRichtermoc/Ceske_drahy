@@ -10,6 +10,8 @@ namespace CeskeDrahy.Tests
     public sealed class RailAssetTests
     {
         [TestCase("Assets/Resources/Models/Characters/CJ/CJ.fbx")]
+        [TestCase("Assets/Resources/Models/Characters/Revizor/Revizor.fbx")]
+        [TestCase("Assets/Resources/Models/Characters/Alchymista/Alchymista.fbx")]
         public void CharacterAvatarIsAValidHumanoid(string path)
         {
             var avatar = AssetDatabase.LoadAllAssetsAtPath(path).OfType<Avatar>().FirstOrDefault();
@@ -17,6 +19,16 @@ namespace CeskeDrahy.Tests
             Assert.IsTrue(avatar.isHuman && avatar.isValid, path + " avatar is a valid humanoid");
             var importer = (ModelImporter)AssetImporter.GetAtPath(path);
             Assert.IsFalse(importer.humanDescription.human.Any(h => h.humanName == "Jaw" || h.humanName.EndsWith("Eye")), "Body clips must not drive the face");
+        }
+
+        [Test]
+        public void PigeonLoopsItsFlappingClip()
+        {
+            var pigeon = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Resources/Models/Animals/Holub/Holub.fbx");
+            var animation = pigeon.GetComponent<Animation>();
+            Assert.IsNotNull(animation, "Legacy Animation component");
+            Assert.IsNotNull(animation.clip, "Flapping clip");
+            Assert.IsTrue(animation.clip.legacy && animation.clip.length > 1 && animation.clip.length < 6, "Clip covers only the flapping action");
         }
 
         [Test]

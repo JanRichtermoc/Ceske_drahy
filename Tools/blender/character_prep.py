@@ -10,6 +10,7 @@ write Unity-ready textures (<part>_A albedo with alpha, <part>_N normal, <part>_
 export an FBX plus a front preview render.
 """
 import argparse
+import json
 import math
 import os
 import re
@@ -32,6 +33,20 @@ PROFILES = {
         # Face bones the Humanoid mapper would grab (jaw, eyes): renamed so the body clips leave the face alone.
         "rename": {"FB_Jaw_000": "FB_Chin_000", "FB_L_Eye_000": "FB_L_Ocular_000", "FB_R_Eye_000": "FB_R_Ocular_000"},
     },
+    # NS conductor (Sketchfab, CC BY) as the ČD ticket inspector; Mixamo rig.
+    "revizor": {
+        "height": 1.82, "decimate": .42,
+        "arms": {"L": ("mixamorig:LeftArm", "mixamorig:LeftForeArm", "mixamorig:LeftHand"), "R": ("mixamorig:RightArm", "mixamorig:RightForeArm", "mixamorig:RightHand")},
+        "parts": {},
+    },
+    # Old man in a coat (Sketchfab, CC BY) as the underpass "alchemist"; Mixamo rig.
+    "alchymista": {
+        "height": 1.76, "decimate": .6, "reset_pose": True,
+        "arms": {"L": ("mixamorig:LeftArm", "mixamorig:LeftForeArm", "mixamorig:LeftHand"), "R": ("mixamorig:RightArm", "mixamorig:RightForeArm", "mixamorig:RightHand")},
+        "parts": {},
+    },
+    # Flying pigeon (Sketchfab, CC BY): not humanoid, keeps its flapping action; body length scaled, beak along +X.
+    "holub": {"length": .42, "decimate": .1, "animal": True, "parts": {}},
 }
 
 
@@ -184,12 +199,23 @@ def main():
     os.makedirs(os.path.join(out, "Textures"), exist_ok=True)
     bpy.ops.import_scene.gltf(filepath=opts.source)
     armature = next(o for o in bpy.data.objects if o.type == "ARMATURE")
+    if profile.get("reset_pose"):
+        # Some rigs import posed at the first frame of their own animation: back to the bind pose.
+        armature.animation_data_clear()
+        for pb in armature.pose.bones:
+            pb.matrix_basis = Matrix.Identity(4)
     for obj in list(bpy.data.objects):
         if obj.type == "MESH" and not any(m.type == "ARMATURE" for m in obj.modifiers):
             bpy.data.objects.remove(obj, do_unlink=True)
     meshes = [o for o in bpy.data.objects if o.type == "MESH"]
     for obj in meshes:
         repair_normals(obj)
+        if profile.get("decimate"):
+            mod = obj.modifiers.new("Decimate", "DECIMATE")
+            mod.ratio = profile["decimate"]
+            with bpy.context.temp_override(object=obj, active_object=obj):
+                bpy.ops.object.modifier_move_to_index(modifier="Decimate", index=0)
+                bpy.ops.object.modifier_apply(modifier="Decimate")
     strip_suffixes(armature, meshes)
     merge_weights(meshes, profile.get("merge", {}))
     for old, new in profile.get("rename", {}).items():
@@ -208,7 +234,8 @@ def main():
     bpy.ops.object.select_all(action="SELECT")
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
     print("BONES", [b.name for b in armature.data.bones][:40])
-    t_pose(armature, profile["arms"])
+    if not profile.get("animal"):
+        t_pose(armature, profile["arms"])
 
     # Height and ground contact.
     low, high = math.inf, -math.inf
@@ -216,7 +243,11 @@ def main():
         for v in obj.data.vertices:
             z = (obj.matrix_world @ v.co).z
             low, high = min(low, z), max(high, z)
-    scale = profile["height"] / (high - low)
+    if profile.get("animal"):
+        xs = [(obj.matrix_world @ v.co).x for obj in meshes for v in obj.data.vertices]
+        scale = profile["length"] / (max(xs) - min(xs))
+    else:
+        scale = profile["height"] / (high - low)
     for obj in [armature] + meshes:
         obj.scale = (scale, scale, scale)
         obj.location = (0, 0, -low * scale)
@@ -226,42 +257,68 @@ def main():
     for obj in meshes:
         obj.parent = armature
 
-    # Materials named after their part; parts sharing a texture share a material.
-    by_part = {}
+    # Materials named after their part; parts sharing a texture share a material. Each source material is handled once.
+    by_part, part_of = {}, {}
     for obj in meshes:
         for slot in obj.material_slots:
             material = slot.material
             if material is None:
                 continue
-            stem = material.name.split("_")[0]
-            part = profile["parts"].get(stem, stem.capitalize())
-            if part not in by_part:
-                by_part[part] = material
-                material.name = "CJ_" + part if opts.profile == "cj" else part
-                albedo, normal, orm = image_of(material, "Base Color"), image_of(material, "Normal"), image_of(material, "Roughness")
-                if albedo:
-                    save_image(albedo, os.path.join(out, "Textures", part + "_A.png"), "albedo")
-                if normal:
-                    save_image(normal, os.path.join(out, "Textures", part + "_N.png"), "normal")
-                if orm and orm.size[0] > 8:
-                    save_image(orm, os.path.join(out, "Textures", part + "_ORM.png"), "orm")
-            slot.material = by_part[part]
+            if material.name_full not in part_of:
+                stem = material.name.split("_")[0]
+                part = profile["parts"].get(stem) or (stem.capitalize() if opts.profile == "cj" else re.sub(r"[^A-Za-z0-9]", "", material.name.title()))
+                if part not in by_part:
+                    albedo, normal, orm = image_of(material, "Base Color"), image_of(material, "Normal"), image_of(material, "Roughness")
+                    # Parts whose albedo really uses its alpha (lashes, hair cards) render with the cutout shader.
+                    file_part = part
+                    if albedo and albedo.channels == 4 and part not in profile.get("cutout", ()):
+                        alpha = list(albedo.pixels)[3::4]
+                        if alpha and min(alpha) < .5:
+                            file_part = part + "Cutout"
+                    if albedo:
+                        save_image(albedo, os.path.join(out, "Textures", file_part + "_A.png"), "albedo")
+                    if normal:
+                        save_image(normal, os.path.join(out, "Textures", file_part + "_N.png"), "normal")
+                    if orm and orm.size[0] > 8:
+                        save_image(orm, os.path.join(out, "Textures", file_part + "_ORM.png"), "orm")
+                    by_part[part] = (material, file_part)
+                part_of[material.name_full] = part
+            target, file_part = by_part[part_of[material.name_full]]
+            slot.material = target
+    # Colour and finish of every part, for parts without textures (badges, keys, signal disc…).
+    info = {}
+    for target, file_part in by_part.values():
+        target.name = opts.profile.upper() + "_" + file_part
+        bsdf = next((n for n in target.node_tree.nodes if n.type == "BSDF_PRINCIPLED"), None)
+        if bsdf:
+            info[file_part] = {"color": list(bsdf.inputs["Base Color"].default_value), "metallic": bsdf.inputs["Metallic"].default_value,
+                               "roughness": bsdf.inputs["Roughness"].default_value}
+    with open(os.path.join(out, "Textures", "materials.json"), "w", encoding="utf-8") as handle:
+        json.dump({"parts": [dict(name=k, **v) for k, v in info.items()]}, handle, indent=1)
     for material in list(bpy.data.materials):
         if material.users == 0:
             bpy.data.materials.remove(material)
 
     name = opts.profile.upper() if opts.profile == "cj" else opts.profile.capitalize()
+    animal = profile.get("animal", False)
+    if animal and armature.animation_data and armature.animation_data.action:
+        action = armature.animation_data.action
+        action.name = "Fly"
+        # Bake exactly the action's frames, so the clip loops without a frozen tail.
+        bpy.context.scene.frame_start, bpy.context.scene.frame_end = int(action.frame_range[0]), int(action.frame_range[1])
     bpy.ops.export_scene.fbx(filepath=os.path.join(out, name + ".fbx"), use_selection=False, object_types={"ARMATURE", "MESH"},
                              axis_forward="-Z", axis_up="Y", apply_scale_options="FBX_SCALE_ALL", add_leaf_bones=False,
-                             bake_anim=False, use_tspace=True, mesh_smooth_type="FACE", path_mode="STRIP", embed_textures=False)
+                             bake_anim=animal, bake_anim_use_all_actions=False, bake_anim_use_nla_strips=False,
+                             use_tspace=True, mesh_smooth_type="FACE", path_mode="STRIP", embed_textures=False)
 
     # Front preview for the gate checks.
     scene = bpy.context.scene
     camera = bpy.data.objects.new("Preview camera", bpy.data.cameras.new("Preview camera"))
     scene.collection.objects.link(camera)
     camera.data.type = "ORTHO"
-    camera.data.ortho_scale = profile["height"] * 1.15
-    camera.location = (0, -6, profile["height"] * .5)
+    size = profile.get("height", profile.get("length", 1))
+    camera.data.ortho_scale = size * 1.3
+    camera.location = (0, -6, size * .5)
     camera.rotation_euler = (math.radians(90), 0, 0)
     scene.camera = camera
     sun = bpy.data.objects.new("Preview sun", bpy.data.lights.new("Preview sun", "SUN"))
