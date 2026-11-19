@@ -149,6 +149,7 @@ namespace CeskeDrahy
                 if(Input.GetKeyDown(KeyCode.M)){muted=!muted;SaveSettings();}
                 if(mode==Mode.Menu && confirm)StartLevel(selectedLevel,true);
                 else if((mode==Mode.Won||mode==Mode.Lost) && confirm)FinishAction(true);
+                else if((mode==Mode.Won||mode==Mode.Lost) && Input.GetKeyDown(KeyCode.R))StartRun();
             }
             if(mode==Mode.Loading && --loadingFrames<=0){LoadLevel(pendingLevel);StartRun();}
             if(mode==Mode.Playing && Input.GetKeyDown(KeyCode.R))Respawn(false);
