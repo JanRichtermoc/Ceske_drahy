@@ -1,2 +1,28 @@
-# Auto detect text files and perform LF normalization
 * text=auto
+
+# Unity YAML
+*.unity      text merge=unityyamlmerge eol=lf
+*.prefab     text merge=unityyamlmerge eol=lf
+*.asset      text merge=unityyamlmerge eol=lf
+*.mat        text merge=unityyamlmerge eol=lf
+*.controller text merge=unityyamlmerge eol=lf
+*.anim       text merge=unityyamlmerge eol=lf
+*.meta       text eol=lf
+
+# Binary assets
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.tga  binary
+*.exr  binary
+*.glb  binary
+*.gltf text
+*.bin  binary
+*.fbx  binary
+*.blend binary
+*.ttf  binary
+*.otf  binary
+*.wav  binary
+*.ogg  binary
+*.mp3  binary
+*.zip  binary

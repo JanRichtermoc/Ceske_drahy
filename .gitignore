@@ -17,3 +17,7 @@ Tools/.venv/
 Tools/__pycache__/
 .local/
 captures/
+
+# Unity crash recovery scenes
+Assets/_Recovery/
+Assets/_Recovery.meta
