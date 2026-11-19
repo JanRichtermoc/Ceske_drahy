@@ -1,12 +1,12 @@
-# České dráhy — Olomoucký chaos
+# SuperCigos
 
-**[⬇ Stáhnout hru pro Windows (ZIP)](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/CeskeDrahy-Windows.zip)** · [macOS (Apple Silicon)](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/CeskeDrahy-macOS.zip) · [všechna vydání](https://github.com/JanRichtermoc/Ceske_drahy/releases)
+**[⬇ Stáhnout hru pro Windows (ZIP)](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/SuperCigos-Windows.zip)** · [macOS (Apple Silicon)](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/SuperCigos-macOS.zip) · [všechna vydání](https://github.com/JanRichtermoc/Ceske_drahy/releases)
 
 ![Hlavní menu – odjezdová tabule](docs/menu.png)
 
 ## Popis hry
 
-*České dráhy — Olomoucký chaos* je 2,5D arkádová plošinovka pro jednoho hráče. Carl „CJ“ Johnson se snaží stihnout poslední spoj. Cestou proskáče **deset skutečných železničních stanic Olomouce** po střechách vagonů, cisteren a kontejnerů. Pod nohama mu přitom překážejí revizoři, holubi, pára a podchodoví alchymisté s obřími injekcemi.
+*SuperCigos* je 2,5D arkádová plošinovka pro jednoho hráče. Carl „CJ“ Johnson se snaží stihnout poslední spoj. Cestou proskáče **deset skutečných železničních stanic Olomouce** po střechách vagonů, cisteren a kontejnerů. Pod nohama mu přitom překážejí revizoři, holubi, pára a podchodoví alchymisté s obřími injekcemi.
 
 **Cíl:** projet každou trať od startovního nástupiště do cíle co nejrychleji. Po dojetí se ukáže **jízdenka s časem** a osobním rekordem trati (razítko „NOVÝ REKORD“), dále body, sebrané jízdenky, odrazy a nejvyšší kombo. Rekordy se ukládají lokálně a zobrazují se v menu na odjezdové tabuli.
 
@@ -58,22 +58,22 @@ Hra se ovládá klávesnicí; v menu jde použít i myš.
 ## Postup spuštění
 
 ### Windows (doporučeno)
-1. Stáhni **[CeskeDrahy-Windows.zip](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/CeskeDrahy-Windows.zip)** ze stránky [Releases](https://github.com/JanRichtermoc/Ceske_drahy/releases).
+1. Stáhni **[SuperCigos-Windows.zip](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/SuperCigos-Windows.zip)** ze stránky [Releases](https://github.com/JanRichtermoc/Ceske_drahy/releases).
 2. Klikni na ZIP pravým tlačítkem a zvol **Extrahovat vše…**. Hra nejde spustit přímo z neotevřeného ZIPu.
-3. Ve složce `CeskeDrahy` spusť **`CeskeDrahy.exe`**. Soubory `UnityPlayer.dll`, `CeskeDrahy_Data` a `MonoBleedingEdge` musí zůstat vedle exe.
+3. Ve složce `SuperCigos` spusť **`SuperCigos.exe`**. Soubory `UnityPlayer.dll`, `SuperCigos_Data` a `MonoBleedingEdge` musí zůstat vedle exe.
 4. Build není podepsaný, takže Windows SmartScreen může ukázat „Systém Windows ochránil váš počítač“. Klikni na **Další informace → Přesto spustit**.
 
 Požadavky: Windows 10 nebo 11 (64 bit), grafická karta s DirectX 11, asi 200 MB volného místa. Instalace ani připojení k internetu nejsou potřeba.
 
 ### macOS (Apple Silicon)
-1. Stáhni a rozbal [CeskeDrahy-macOS.zip](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/CeskeDrahy-macOS.zip).
-2. Aplikace není notarizovaná. Při prvním spuštění na ni klikni pravým tlačítkem a zvol **Otevřít**, nebo v Terminálu spusť `xattr -dr com.apple.quarantine CeskeDrahy.app`.
+1. Stáhni a rozbal [SuperCigos-macOS.zip](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/SuperCigos-macOS.zip).
+2. Aplikace není notarizovaná. Při prvním spuštění na ni klikni pravým tlačítkem a zvol **Otevřít**, nebo v Terminálu spusť `xattr -dr com.apple.quarantine SuperCigos.app`.
 
 ### Ze zdrojového kódu v Unity
 1. Naklonuj repozitář: `git clone https://github.com/JanRichtermoc/Ceske_drahy.git`.
 2. V Unity Hub zvol **Add → Add project from disk**, vyber složku a otevři ji v Unity **6000.6.8f1**. Při prvním otevření se importují balíčky a assety, což trvá několik minut.
 3. Otevři scénu `Assets/Scenes/OlomoucHlavniNadrazi.unity` a stiskni **Play**.
-4. Vlastní build: menu **České dráhy → Build Windows** vytvoří `Builds/Windows/CeskeDrahy/CeskeDrahy.exe` a `Builds/CeskeDrahy-Windows.zip`, **České dráhy → Build macOS** vytvoří `Builds/CeskeDrahy.app`. Windows build potřebuje v Unity Hub modul *Windows Build Support (Mono)*.
+4. Vlastní build: menu **SuperCigos → Build Windows** vytvoří `Builds/Windows/SuperCigos/SuperCigos.exe` a `Builds/SuperCigos-Windows.zip`, **SuperCigos → Build macOS** vytvoří `Builds/SuperCigos.app`. Windows build potřebuje v Unity Hub modul *Windows Build Support (Mono)*.
 
 ## Použité technologie
 

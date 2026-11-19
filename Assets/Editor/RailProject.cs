@@ -5,7 +5,7 @@ using CeskeDrahy;
 
 public static class RailProject
 {
-    [MenuItem("České dráhy/Prepare game scene")]
+    [MenuItem("SuperCigos/Prepare game scene")]
     public static void Prepare()
     {
         EnsureMaterials();
@@ -28,7 +28,7 @@ public static class RailProject
     /// <summary>Player settings shared by every platform build.</summary>
     public static void ConfigurePlayer()
     {
-        PlayerSettings.productName="České dráhy — Poslední spoj";PlayerSettings.companyName="Railway Platformer";
+        PlayerSettings.productName="SuperCigos";PlayerSettings.companyName="Railway Platformer";
         PlayerSettings.defaultScreenWidth=1280;PlayerSettings.defaultScreenHeight=720;
         PlayerSettings.fullScreenMode=FullScreenMode.Windowed;PlayerSettings.resizableWindow=true;PlayerSettings.allowFullscreenSwitch=true;
         PlayerSettings.runInBackground=true;PlayerSettings.colorSpace=ColorSpace.Linear;
@@ -41,26 +41,26 @@ public static class RailProject
         graphics.ApplyModifiedPropertiesWithoutUndo();
         AssetDatabase.SaveAssets();
     }
-    [MenuItem("České dráhy/Build macOS")]
+    [MenuItem("SuperCigos/Build macOS")]
     public static void BuildMac()
     {
         EnsureMaterials();ConfigurePlayer();
-        var report=BuildPipeline.BuildPlayer(new BuildPlayerOptions{scenes=new[]{"Assets/Scenes/OlomoucHlavniNadrazi.unity"},locationPathName="Builds/CeskeDrahy.app",target=BuildTarget.StandaloneOSX,options=BuildOptions.None});
+        var report=BuildPipeline.BuildPlayer(new BuildPlayerOptions{scenes=new[]{"Assets/Scenes/OlomoucHlavniNadrazi.unity"},locationPathName="Builds/SuperCigos.app",target=BuildTarget.StandaloneOSX,options=BuildOptions.None});
         if(report.summary.result!=UnityEditor.Build.Reporting.BuildResult.Succeeded)throw new System.Exception("Build failed: "+report.summary.result);
         Debug.Log("RAILWAY_BUILD_OK "+report.summary.totalSize);
     }
-    [MenuItem("České dráhy/Build Windows")]
+    [MenuItem("SuperCigos/Build Windows")]
     public static void BuildWindows()
     {
         EnsureMaterials();ConfigurePlayer();
         // IL2CPP cannot cross-compile Windows players from macOS; Mono runs everywhere.
         PlayerSettings.SetScriptingBackend(UnityEditor.Build.NamedBuildTarget.Standalone,ScriptingImplementation.Mono2x);
-        const string folder="Builds/Windows/CeskeDrahy";
+        const string folder="Builds/Windows/SuperCigos";
         if(System.IO.Directory.Exists(folder))System.IO.Directory.Delete(folder,true);
-        var report=BuildPipeline.BuildPlayer(new BuildPlayerOptions{scenes=new[]{"Assets/Scenes/OlomoucHlavniNadrazi.unity"},locationPathName=folder+"/CeskeDrahy.exe",target=BuildTarget.StandaloneWindows64,options=BuildOptions.None});
+        var report=BuildPipeline.BuildPlayer(new BuildPlayerOptions{scenes=new[]{"Assets/Scenes/OlomoucHlavniNadrazi.unity"},locationPathName=folder+"/SuperCigos.exe",target=BuildTarget.StandaloneWindows64,options=BuildOptions.None});
         if(report.summary.result!=UnityEditor.Build.Reporting.BuildResult.Succeeded)throw new System.Exception("Build failed: "+report.summary.result);
         foreach(string junk in System.IO.Directory.GetDirectories(folder,"*DontShip*"))System.IO.Directory.Delete(junk,true);
-        const string zip="Builds/CeskeDrahy-Windows.zip";
+        const string zip="Builds/SuperCigos-Windows.zip";
         if(System.IO.File.Exists(zip))System.IO.File.Delete(zip);
         System.IO.Compression.ZipFile.CreateFromDirectory(folder,zip,System.IO.Compression.CompressionLevel.Optimal,true);
         Debug.Log("RAILWAY_WINDOWS_BUILD_OK "+report.summary.totalSize+" warnings="+report.summary.totalWarnings);

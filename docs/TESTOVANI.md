@@ -1,11 +1,11 @@
 # Ruční testovací scénář
 
-Projdi na sestaveném buildu (Windows `CeskeDrahy.exe` nebo macOS aplikace) v okně 1280×720 i na celé obrazovce. U každého kroku zapiš OK nebo popis chyby.
+Projdi na sestaveném buildu (Windows `SuperCigos.exe` nebo macOS aplikace) v okně 1280×720 i na celé obrazovce. U každého kroku zapiš OK nebo popis chyby.
 
 ## 1. Spuštění a menu
 | # | Krok | Očekávaný výsledek |
 |---|---|---|
-| 1.1 | Spusť hru. | Otevře se okno s hlavním menu: vlevo nápis ČESKÉ DRÁHY, vpravo tabule ODJEZDY s 10 tratěmi a nahoře hodiny se systémovým časem. |
+| 1.1 | Spusť hru. | Otevře se okno s hlavním menu: vlevo nápis SUPERCIGOS, vpravo tabule ODJEZDY s 10 tratěmi a nahoře hodiny se systémovým časem. |
 | 1.2 | Šipkami ↑/↓ (nebo W/S) projdi tabuli. | Zvýrazněný řádek se posouvá a karta vlevo ukazuje název, popis, obtížnost a rekord vybrané trati. Z první trati jde šipka ↑ na poslední. |
 | 1.3 | Najeď myší na řádek. | Řádek se zvýrazní. |
 | 1.4 | Klikni na NASTAVENÍ, pak na HOTOVO. | Otevře a zavře se nastavení. Klik na HOTOVO nespustí žádnou trať. |

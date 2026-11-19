@@ -102,7 +102,7 @@ namespace CeskeDrahy
             if (mats.TryGetValue(name, out var existing)) return existing;
             ColorUtility.TryParseHtmlString(hex, out var color);
             var template=Resources.Load<Material>("Surface");
-            if(!template)throw new System.InvalidOperationException("Missing Surface material. Run České dráhy / Prepare game scene.");
+            if(!template)throw new System.InvalidOperationException("Missing Surface material. Run SuperCigos / Prepare game scene.");
             var m = new Material(template) { name = name, color = color, enableInstancing = true };
             m.SetFloat("_Metallic", metal); m.SetFloat("_Glossiness", smooth); mats[name] = m;
             return m;
