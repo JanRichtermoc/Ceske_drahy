@@ -15,6 +15,7 @@ namespace CeskeDrahy
         }
         public readonly List<Platform> platforms = new List<Platform>();
         public readonly List<Transform> tickets = new List<Transform>();
+        /// <summary>Ticket rest positions local to their roof root.</summary>
         public readonly List<Vector2> ticketOrigins = new List<Vector2>();
         public readonly List<Transform> birds = new List<Transform>();
         public readonly List<Vector2> birdOrigins = new List<Vector2>();
@@ -203,9 +204,10 @@ namespace CeskeDrahy
             {
                 for(float x=p.x-p.width/2+2;x<p.x+p.width/2-1;x+=2.5f)
                 {
-                    var t=Box("Jízdenka",new Vector3(x,p.top+1.25f,0),new Vector3(.45f,.3f,.07f),gold);
+                    // Tickets ride their roof, so they stay above a moving wagon.
+                    var t=Box("Jízdenka",new Vector3(x-p.x,p.top+1.25f,0),new Vector3(.45f,.3f,.07f),gold,p.root);
                     Box("Ticket stripe",new Vector3(0,0,-.045f),new Vector3(.29f,.055f,.015f),cream,t);
-                    tickets.Add(t);ticketOrigins.Add(new Vector2(x,p.top+1.25f));
+                    tickets.Add(t);ticketOrigins.Add(new Vector2(x-p.x,p.top+1.25f));
                 }
             }
             foreach(float x in Level.Birds)
@@ -631,6 +633,7 @@ namespace CeskeDrahy
             checkpointSignals[checkpoint][0].SetActive(!clear);checkpointSignals[checkpoint][1].SetActive(clear);
         }
         public void ResetSignals(){for(int i=0;i<checkpointSignals.Count;i++)SetSignal(i,false);}
+        public void ResetPickups(){foreach(var t in tickets)t.gameObject.SetActive(true);}
         public void AddWindProp(Transform prop)=>windProps.Add(prop);
         public void AddWindStreak(Transform streak)=>windStreaks.Add(streak);
         /// <summary>Flags lean and streaks blow while the gust pushes; purely visual.</summary>
@@ -667,7 +670,7 @@ namespace CeskeDrahy
                 if(vent.Active)vent.Plume.localScale=new Vector3(1,.65f+.35f*Mathf.Sin((phase-1.15f)*3.2f),1);
             }
             foreach(var p in platforms){float v=Mathf.Sin(time*.8f+p.phase)*p.amplitude;p.previous=p.offset;p.delta=v-p.offset;p.offset=v;p.root.position=new Vector3(p.x+v,0,0);}
-            for(int i=0;i<tickets.Count;i++)if(tickets[i].gameObject.activeSelf){tickets[i].position=new Vector3(ticketOrigins[i].x,ticketOrigins[i].y+Mathf.Sin(time*3+i)*.12f,0);tickets[i].rotation=Quaternion.Euler(0,time*90,8);}
+            for(int i=0;i<tickets.Count;i++)if(tickets[i].gameObject.activeSelf){tickets[i].localPosition=new Vector3(ticketOrigins[i].x,ticketOrigins[i].y+Mathf.Sin(time*3+i)*.12f,0);tickets[i].rotation=Quaternion.Euler(0,time*90,8);}
             for(int i=0;i<birds.Count;i++)
             {
                 birds[i].position=new Vector3(birdOrigins[i].x+Mathf.Sin(time*.8f+i)*2.8f,birdOrigins[i].y+Mathf.Sin(time*1.7f+i)*1.1f,0);

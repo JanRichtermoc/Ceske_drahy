@@ -45,7 +45,9 @@ namespace CeskeDrahy
                 warning[i].gameObject.SetActive(false);
                 if(i==0||i==2)
                 {
+                    // The cart stands on the same roof as its owner and rides along with a moving wagon.
                     var cart=world.Group("Vozík s krabicemi",new Vector3(xs[i]+1.2f,y+.25f,.65f));
+                    if(roof!=null)cart.SetParent(roof.root,true);
                     world.Box("Cart",new Vector3(0,.35f,0),new Vector3(.9f,.12f,.6f),world.steel,cart);
                     world.Box("Cardboard",new Vector3(0,.7f,0),new Vector3(.8f,.6f,.55f),world.Mat("Cardboard","#AE8D61"),cart);
                     world.Sign("NEŠŤOUCHAT",new Vector3(0,.75f,-.3f),.012f,cart);
@@ -56,20 +58,20 @@ namespace CeskeDrahy
             float[] heals=world.Level.Medkits;
             for(int i=0;i<heals.Length;i++)
             {
-                var root=world.Group("Lékárnička",new Vector3(heals[i],Surface(heals[i])+1.25f,0));
+                var root=OnRoof("Lékárnička",heals[i],1.25f);
                 world.Box("Case",Vector3.zero,new Vector3(.6f,.5f,.24f),world.cream,root);
                 world.Box("Cross upright",new Vector3(0,0,-.14f),new Vector3(.12f,.32f,.025f),world.green,root);
                 world.Box("Cross crossbar",new Vector3(0,0,-.15f),new Vector3(.32f,.12f,.025f),world.green,root);
-                medkits[i]=root;medkitPositions[i]=root.position;
+                medkits[i]=root;medkitPositions[i]=root.localPosition;
             }
             float[] snacks=world.Level.Snacks;
             for(int i=0;i<snacks.Length;i++)
             {
-                var root=world.Group("Tvarůžkové turbo",new Vector3(snacks[i],Surface(snacks[i])+1.7f,0));
+                var root=OnRoof("Tvarůžkové turbo",snacks[i],1.7f);
                 var disc=world.Box("Tvarůžek",Vector3.zero,new Vector3(.65f,.14f,.65f),world.gold,root,PrimitiveType.Cylinder);disc.localRotation=Quaternion.Euler(70,0,0);
                 world.Box("Cheese hole",new Vector3(.12f,.12f,-.19f),Vector3.one*.13f,world.rust,root,PrimitiveType.Sphere);
                 world.Box("Cheese hole",new Vector3(-.13f,-.1f,-.18f),Vector3.one*.09f,world.rust,root,PrimitiveType.Sphere);
-                cheeses[i]=root;cheesePositions[i]=root.position;
+                cheeses[i]=root;cheesePositions[i]=root.localPosition;
             }
             float[] bounce=world.Level.Springs;
             for(int i=0;i<bounce.Length;i++)
@@ -84,6 +86,13 @@ namespace CeskeDrahy
             {aura[i]=world.Box("Cartoon infection bubble",Vector3.zero,Vector3.one*.12f,world.Mat("Lime serum","#B4EB43"),null,PrimitiveType.Sphere);aura[i].gameObject.SetActive(false);}
         }
         float Surface(float x)=>world.Surface(x);
+        /// <summary>A pickup floating above the roof at x, parented to that roof so it rides a moving wagon.</summary>
+        Transform OnRoof(string name,float x,float height)
+        {
+            var roof=world.PlatformAt(x);
+            if(roof==null)return world.Group(name,new Vector3(x,Surface(x)+height,0));
+            return world.Group(name,new Vector3(x-roof.x,roof.top+height,0),roof.root);
+        }
         Transform Syringe(string name,Transform parent=null)
         {
             var root=world.Group(name,Vector3.zero,parent);
@@ -130,7 +139,7 @@ namespace CeskeDrahy
         }
         public void Dash()
         {
-            if(dashCooldown>0)return;dash=.19f;dashCooldown=1.25f;game.audioMix.Dash();PopText("DOVOLENÍ!",game.position+Vector2.up*2.3f);
+            if(dashCooldown>0)return;dash=RailGame.DashTime;dashCooldown=RailGame.DashCooldown;game.audioMix.Dash();PopText("DOVOLENÍ!",game.position+Vector2.up*2.3f);
         }
         public void Infect()
         {
@@ -143,7 +152,7 @@ namespace CeskeDrahy
         }
         public void Cure()
         {
-            infection=0;infectionProtection=1;game.lives=Mathf.Min(3,game.lives+1);AddScore(150,"ZASE VE FORMĚ!");game.Celebrate();
+            infection=0;infectionProtection=1;game.lives=Mathf.Min(game.Level.Lives,game.lives+1);AddScore(150,"ZASE VE FORMĚ!");game.Celebrate();
         }
         public void BeforeStep(float dt)
         {
@@ -170,7 +179,7 @@ namespace CeskeDrahy
         bool Stomp(Vector2 old,float x,float head)
         {
             if(game.velocity.y>0||Mathf.Abs(game.position.x-x)>.75f||old.y<head-.38f||game.position.y>head+.12f)return false;
-            game.Launch(11.5f);game.invulnerability=Mathf.Max(game.invulnerability,.3f);stomps++;AddScore(250,"BOING!");game.Boing();return true;
+            game.StompLaunch();stomps++;AddScore(250,"BOING!");game.Boing();return true;
         }
         public bool Bird(int i,Vector2 old)
         {
@@ -207,6 +216,7 @@ namespace CeskeDrahy
                 if(phase>=3.5f&&!streetThrown[i]){Shoot(man.position+Vector3.up*1.25f);streetThrown[i]=true;}
                 if(phase<1)streetThrown[i]=streetCalled[i]=false;
                 if(distance<.7f&&Mathf.Abs(game.position.y-man.position.y)<1.7f)Infect();
+                if(game.mode!=RailGame.Mode.Playing)return;
             }
             for(int i=0;i<needles.Length;i++)if(needleLife[i]>0)
             {
@@ -214,21 +224,23 @@ namespace CeskeDrahy
                 if(Vector2.Distance(game.position+Vector2.up*.9f,needles[i].position)<.65f){Infect();needleLife[i]=0;}
                 if(needleLife[i]<=0)needles[i].gameObject.SetActive(false);
             }
+            // A lethal infection ends the run; nothing may be collected afterwards (no revival by a medkit).
+            if(game.mode!=RailGame.Mode.Playing)return;
             for(int i=0;i<medkits.Length;i++)if(medkits[i].gameObject.activeSelf)
             {
-                medkits[i].position=medkitPositions[i]+Vector3.up*Mathf.Sin(game.simTime*3+i)*.12f;
+                medkits[i].localPosition=medkitPositions[i]+Vector3.up*Mathf.Sin(game.simTime*3+i)*.12f;
                 if(Vector2.Distance(game.position+Vector2.up*.9f,medkits[i].position)<.85f){medkits[i].gameObject.SetActive(false);Cure();}
             }
             for(int i=0;i<cheeses.Length;i++)if(cheeses[i].gameObject.activeSelf)
             {
-                cheeses[i].position=cheesePositions[i]+Vector3.up*Mathf.Sin(game.simTime*3+i)*.17f;cheeses[i].Rotate(0,dt*100,0);
+                cheeses[i].localPosition=cheesePositions[i]+Vector3.up*Mathf.Sin(game.simTime*3+i)*.17f;cheeses[i].Rotate(0,dt*100,0);
                 if(Vector2.Distance(game.position+Vector2.up,cheeses[i].position)<.8f){cheeses[i].gameObject.SetActive(false);turbo=7;AddScore(200,"TVARŮŽKOVÉ TURBO!");game.Celebrate();}
             }
             for(int i=0;i<springs.Length;i++)
             {
                 springCooldown[i]-=dt;springs[i].localScale=new Vector3(1,springCooldown[i]>.55f?.5f:1,1);
                 if(game.grounded&&springCooldown[i]<=0&&Mathf.Abs(game.position.x-springs[i].position.x)<.58f&&Mathf.Abs(game.position.y-springs[i].position.y)<.1f)
-                {springCooldown[i]=.85f;game.Launch(18);game.Boing();PopText("KUFROVÝ KATAPULT!",game.position+Vector2.up*2);}
+                {springCooldown[i]=.85f;game.Launch(RailGame.SpringSpeed);game.Boing();PopText("KUFROVÝ KATAPULT!",game.position+Vector2.up*2);}
             }
             for(int i=0;i<aura.Length;i++)
             {

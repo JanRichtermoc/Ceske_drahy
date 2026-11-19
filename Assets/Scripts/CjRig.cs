@@ -224,9 +224,20 @@ namespace CeskeDrahy
             world.AttachMesh(name,parent,mesh,material);
         }
 
+        /// <summary>Hit blink: renderers are toggled so the hierarchy (and any animation state) keeps running.</summary>
+        public bool Visible { get; private set; } = true;
+        Renderer[] renderers;
+        public void SetVisible(bool visible)
+        {
+            if(visible==Visible)return;
+            Visible=visible;
+            renderers??=Root.GetComponentsInChildren<Renderer>(true);
+            foreach(var r in renderers)if(r)r.enabled=visible;
+        }
         public void Reset()
         {
-            wasGrounded=false;landing=runPhase=0;direction=1;
+            // Spawning already on the roof: no landing squat.
+            wasGrounded=true;landing=runPhase=0;direction=1;
         }
 
         public void Pose(Vector2 position,Vector2 velocity,bool grounded,bool dash,bool hit,float dt,bool preview=false)

@@ -16,7 +16,8 @@ public static class RailProject
         EditorBuildSettings.scenes=new[]{new EditorBuildSettingsScene("Assets/Scenes/OlomoucHlavniNadrazi.unity",true)};
         ConfigurePlayer();
         var so=new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/ProjectSettings.asset")[0]);
-        var input=so.FindProperty("activeInputHandler");if(input!=null){input.intValue=0;so.ApplyModifiedPropertiesWithoutUndo();}
+        // Input System only (1): keyboard + gamepad through RailInput; the legacy Input Manager is deprecated.
+        var input=so.FindProperty("activeInputHandler");if(input!=null){input.intValue=1;so.ApplyModifiedPropertiesWithoutUndo();}
         foreach(string file in System.IO.Directory.GetFiles("Assets/Resources/Textures"))
         {
             string path=file.Replace('\\','/');

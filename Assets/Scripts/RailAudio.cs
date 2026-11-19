@@ -74,7 +74,7 @@ namespace CeskeDrahy
         {
             screams.Stop();
             dialogue.Stop();
-            effects.Stop();
+            // One-shot effects are short; stopping them would cut the finish whistle when the next route starts.
             stepClock = 0;
             wingClock = 0;
             voiceCooldown = 0;
@@ -136,7 +136,8 @@ namespace CeskeDrahy
             float dt = Time.unscaledDeltaTime;
             ImpactPulse = Mathf.MoveTowards(ImpactPulse, 0, dt * 3.8f);
             duck = Mathf.Max(0, duck - dt);
-            voiceCooldown = Mathf.Max(0, voiceCooldown - dt);
+            // The listener is paused during a pause, so the voice line it waits for is too.
+            if (game.mode != RailGame.Mode.Paused) voiceCooldown = Mathf.Max(0, voiceCooldown - dt);
             bool playing = game.mode == RailGame.Mode.Playing;
             float background = game.muted ? 0 : duck > 0 ? .24f : 1;
             ambience.volume = background * (playing ? .16f : .095f);

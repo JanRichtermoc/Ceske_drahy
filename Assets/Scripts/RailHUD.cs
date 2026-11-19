@@ -19,7 +19,8 @@ namespace CeskeDrahy
         GUIStyle text;
         Texture2D dots;
         float k, ox, oy, fps, appear;
-        bool settings, volumeDirty;
+        bool settings, volumeDirty, mouseMoved;
+        Vector2 lastMouse = new Vector2(-1, -1);
         int seenMode = -1;
         readonly float[] bestTimes = new float[RailLevel.All.Length];
         string clock = "";
@@ -118,6 +119,14 @@ namespace CeskeDrahy
         void OnGUI()
         {
             k = Mathf.Min(Screen.width / 1600f, Screen.height / 900f);
+            // Hover only changes the departure-board selection when the mouse actually moves, so arrow keys keep working.
+            if (Event.current.type == EventType.Repaint)
+            {
+                mouseMoved = lastMouse.x >= 0 && (Event.current.mousePosition - lastMouse).sqrMagnitude > .25f;
+                lastMouse = Event.current.mousePosition;
+            }
+            // A drag released outside the window never sends MouseUp to IMGUI.
+            if (volumeDirty && !RailInput.MouseHeld && Event.current.type == EventType.Repaint) { volumeDirty = false; game.SaveSettings(); }
             ox = (Screen.width - 1600 * k) * .5f; oy = (Screen.height - 900 * k) * .5f;
             // Transient panels never survive a mode change (pause, finish, menu).
             if (seenMode != game.ModeVersion)
@@ -231,12 +240,9 @@ namespace CeskeDrahy
             {
                 var level = RailLevel.All[i];
                 var row = R(796, 216 + i * 56, 738, 52);
+                if (GUI.enabled && row.Contains(Event.current.mousePosition) && (Event.current.type == EventType.MouseMove || (Event.current.type == EventType.Repaint && mouseMoved)))
+                    game.selectedLevel = i;
                 bool selected = i == game.selectedLevel;
-                if (GUI.enabled && row.Contains(Event.current.mousePosition))
-                {
-                    if (Event.current.type == EventType.MouseMove || Event.current.type == EventType.Repaint) game.selectedLevel = i;
-                    selected = true;
-                }
                 if (selected) Fill(row, Amber, 8);
                 else if (i % 2 == 1) Fill(row, A(Color.white, .03f), 8);
                 Color ink = selected ? Ink : Led;
@@ -305,7 +311,7 @@ namespace CeskeDrahy
             // Lives, score, tickets, combo.
             var stats = R(1232, 18, 340, 92, X.Right, Y.Top);
             Panel(stats, A(Navy, .94f), 14);
-            for (int i = 0; i < Mathf.Max(3, game.Level.Lives); i++)
+            for (int i = 0; i < game.Level.Lives; i++)
             {
                 var lamp = R(1254 + i * 34, 34, 24, 24, X.Right, Y.Top);
                 bool on = i < game.lives;
