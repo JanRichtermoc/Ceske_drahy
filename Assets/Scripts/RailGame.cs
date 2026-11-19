@@ -44,6 +44,8 @@ namespace CeskeDrahy
         public float noticeTime;
         /// <summary>Fixed horizontal input for benchmarks and scripted checks; NaN reads the player's input.</summary>
         public float InputOverride = float.NaN;
+        /// <summary>Camera zoom factor for close-up checks (1 = normal framing).</summary>
+        [NonSerialized] public float cameraZoom = 1;
         /// <summary>One full (held) jump for scripted checks.</summary>
         public bool JumpOverride;
         /// <summary>When set, drives the input instead of the player (tests, benchmark tour).</summary>
@@ -52,6 +54,9 @@ namespace CeskeDrahy
         public int JumpCount { get; private set; }
         public int AirJumpCount { get; private set; }
         public int LandCount { get; private set; }
+        public int HitCount { get; private set; }
+        /// <summary>True while a hit's knockback has taken control away.</summary>
+        public bool Knockback => knockback>0;
         public bool FastFalling => fastFall && !grounded && velocity.y<ApexThreshold;
         public bool HeroVisible => playerRig==null || playerRig.Visible;
         public float AxisInput => axis;
@@ -150,13 +155,14 @@ namespace CeskeDrahy
             mode=next;ModeVersion++;
             // The hit blink may have hidden the hero on the frame the run ended.
             if(next!=Mode.Playing)playerRig?.SetVisible(true);
+            playerRig?.SetPaused(next==Mode.Paused);
         }
         public void StartRun()
         {
             SetMode(Mode.Playing);lives=Level.Lives;score=0;checkpoint=0;elapsed=0;simTime=0;position=Level.Checkpoint(0);previousPosition=position;velocity=Vector2.zero;standing=null;
             grounded=false;invulnerability=0;hurtBlink=0;jumpBuffer=0;coyote=0;knockback=0;accumulator=0;shake=0;wind=0;windWarning=false;jumpHeld=fastFall=jumpCut=false;newRecord=false;
             bestTime=PlayerPrefs.GetFloat(Level.TimeKey,0);bestScore=PlayerPrefs.GetInt(Level.ScoreKey,0);
-            audioMix.ResetRun();chaos.Reset();playerRig.Reset();hero.localScale=Vector3.one;playerRig.SetVisible(true);
+            audioMix.ResetRun();chaos.Reset();playerRig.Reset(this);hero.localScale=Vector3.one;playerRig.SetVisible(true);
             world.ResetPickups();
             world.ResetSignals();
             ClearProjectiles();
@@ -218,12 +224,13 @@ namespace CeskeDrahy
                 world.Weather(wind,windWarning,simTime,position.x);
                 AnimateHero(dt);
             }
+            else if(mode==Mode.Won||mode==Mode.Lost)playerRig.Pose(this,position,Time.deltaTime);
             else if(mode==Mode.Menu)
             {
                 world.Tick(Time.time*.35f,Time.deltaTime);
                 var showcase=world.platforms[1];
                 hero.localScale=Vector3.one*1.42f;
-                playerRig.Pose(new Vector2(showcase.x+showcase.offset-1,showcase.top),Vector2.zero,true,false,false,Time.deltaTime,true);
+                playerRig.PosePreview(new Vector2(showcase.x+showcase.offset-1,showcase.top),Time.deltaTime);
             }
             JumpOverride=false;
             if(mode!=Mode.Paused)UpdateCamera(Time.deltaTime);
@@ -351,7 +358,7 @@ namespace CeskeDrahy
         {
             if(invulnerability>0 || chaos.dash>0 || mode!=Mode.Playing)return;
             chaos.BreakCombo();chaos.PopText("ÁÁÁ! REKLAMACE!",position+Vector2.up*2, new Color(1,.46f,.4f));
-            lives--;audioMix.Hit();shake=.34f;invulnerability=2;hurtBlink=2;
+            lives--;HitCount++;audioMix.Hit();shake=.34f;invulnerability=2;hurtBlink=2;
             velocity=new Vector2(position.x<sourceX?-KnockbackX:KnockbackX,KnockbackY);knockback=KnockbackTime;grounded=false;standing=null;coyote=0;jumpCut=false;
             if(lives<=0)SetMode(Mode.Lost);
         }
@@ -368,7 +375,7 @@ namespace CeskeDrahy
         }
         void AnimateHero(float dt)
         {
-            playerRig.Pose(RenderPosition,velocity,grounded,chaos.dash>0,knockback>0,dt);
+            playerRig.Pose(this,RenderPosition,dt);
             // Only real hits and respawns blink; a stomp's short invulnerability does not.
             playerRig.SetVisible(reducedMotion || hurtBlink<=0 || (int)(simTime*12)%2==0);
         }
@@ -390,7 +397,7 @@ namespace CeskeDrahy
             if(!(aspect>.4f))aspect=.4f; // also catches NaN from a zero-height window
             // Keep at least ~9 m visible ahead and behind on narrow windows.
             float size=mode==Mode.Menu?Mathf.Max(7.5f,13.3f/aspect):Mathf.Max(PlaySize,9.2f/aspect);
-            view.orthographicSize=Mathf.Lerp(view.orthographicSize,size,1-Mathf.Exp(-dt*8));
+            view.orthographicSize=Mathf.Lerp(view.orthographicSize,size*cameraZoom,1-Mathf.Exp(-dt*8));
             if(mode==Mode.Menu){PlaceCamera(Vector3.Lerp(view.transform.position+view.transform.forward*CameraDistance,new Vector3(9.9f,4.3f,0),1-Mathf.Exp(-dt*4)));return;}
             var focus=RenderPosition;
             float step=Mathf.Max(dt,1e-4f);

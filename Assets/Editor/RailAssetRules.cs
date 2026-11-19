@@ -2,13 +2,14 @@ using UnityEditor;
 
 /// <summary>
 /// Import rules for the game's textures, so a fresh checkout imports them identically:
-/// Poly Haven sets (Resources/Textures/PH) keep their 1K/2K size, normals are normal maps, ORM maps are linear.
+/// Poly Haven sets (Resources/Textures/PH) and model textures keep their 1K/2K size, *_N are normal maps, *_ORM are linear.
 /// </summary>
 public sealed class RailAssetRules : AssetPostprocessor
 {
     void OnPreprocessTexture()
     {
-        if (!assetPath.StartsWith("Assets/Resources/Textures/")) return;
+        // World texture sets and the textures of the imported characters and props.
+        if (!assetPath.StartsWith("Assets/Resources/Textures/") && !(assetPath.StartsWith("Assets/Resources/Models/") && assetPath.Contains("/Textures/"))) return;
         var importer = (TextureImporter)assetImporter;
         string name = System.IO.Path.GetFileNameWithoutExtension(assetPath);
         importer.mipmapEnabled = true;
