@@ -11,10 +11,21 @@ CJ chce stihnout poslední spoj a projíždí deset skutečných železničních
 Čas měří simulace, takže pauza a ztráta zaostření se do něj nepočítají. Rekord trati je nejkratší čas a ukládá se do `PlayerPrefs` (`bestTime_<id>`). Body se ukládají zvlášť, u původních tří tratí pod původními klíči.
 
 ## Pohyb
-- Pevný krok 120 Hz s interpolací vykreslení. Běh 7,8 m/s, skok 13,6 m/s, dvojskok 12,3 m/s, gravitace 28 m/s².
-- Buffer skoku 140 ms, coyote time 110 ms, variabilní výška skoku. Puštění klávesy zkrátí jen vlastní skok, nikdy kufr ani odraz od protivníka.
-- Úhyb (Shift) trvá 0,19 s, dává nezranitelnost a dobíjí se 1,25 s.
-- Plošiny jsou jednosměrné střechy s pevnými boky. Pohyblivé vagony veze hráče s sebou.
+Pohyb je „rychlý a přesný“: krátký rozjezd, okamžité otočení a skok, který jde řídit i ve vzduchu. Simulace běží s pevným krokem 120 Hz a vykreslení se mezi kroky interpoluje, takže hra se chová stejně při 60 i 240 FPS. Konstanty jsou `public const` v `RailGame` a čtou je i testy.
+
+| Parametr | Hodnota |
+|---|---|
+| Běh | 9 m/s; zrychlení 95 m/s², brzdění 120 m/s², obrat 170 m/s² (ve vzduchu 65 / 30 / 110) |
+| Skok | 16 m/s při gravitaci 40 m/s², výška 3,2 m za 0,40 s; puštění klávesy zkrátí rychlost na 6 m/s |
+| Vrchol skoku | při \|vy\| < 2 m/s a drženém skoku poloviční gravitace (delší „viset“ nad mezerou) |
+| Pád | gravitace ×1,5, nejvýš 20 m/s; rychlý pád (S / ↓) gravitace ×2,2, nejvýš 27 m/s |
+| Dvojskok | 14,15 m/s, nikdy nezpomalí rychlejší stoupání |
+| Odpuštění | coyote time 0,10 s, buffer skoku 0,14 s, korekce hrany 0,30 m (těsně netrefená střecha se ještě chytí) |
+| Úhyb (Shift) | 17 m/s po dobu 0,17 s, nezranitelnost, nabíjení 1 s |
+| Kufr / odraz od protivníka | 21,5 m/s / 13,7 m/s (se skokem 17 m/s) |
+| Zásah | odhození 5,5 × 8,4 m/s na 0,2 s; pád pod úroveň kolejí (−0,95 m) stojí život |
+
+Plošiny jsou střechy s pevnými boky po celé výšce, pohyblivé vagony vezou hráče, sběratelné předměty i vozík s sebou. EditMode testy počítají z těchto konstant dosah skoku a ověřují, že každou mezeru na všech tratích jde přeskočit (nejtěžší potřebuje 75 % dosahu).
 
 ## Tratě a obtížnost
 Data tratí jsou v `RailLevel.All`. Každá trať má:
@@ -26,12 +37,12 @@ Data tratí jsou v `RailLevel.All`. Každá trať má:
 Obtížnost roste plynule. Šířka střech klesá z 10 na 7 m, výška roste až na 7,4 m, pohyblivých vagonů přibývá a pára má kratší cyklus. Nemilany přidávají protivítr a přednádraží začíná se dvěma životy. EditMode testy ověřují, že každou mezeru jde podle fyziky skoku překonat a že nic nestojí ve vzduchu.
 
 ## Vizuální styl – stylizovaný realismus
-- PBR textury (ambientCG, skeny ze Sketchfabu) s triplanárním mapováním v metrech.
-- Vlastní shader `Railway/Surface` přidává rim světlo v barvě oblohy, jemnou patinu podle polohy na objektu a kontaktní ztmavení u země.
-- Šest presetů denní doby (den, odpoledne, soumrak, západ, večer, noc). Každý má vlastní oblohu s mraky a hvězdami, mlhu a barevné ladění v post-processu (bloom, ACES, vinětace).
-- Okna paneláků a hal se po setmění rozsvítí přes emisní masku. Bloom pak zvýrazní lampy, světlomety a návěstidla.
-- Stromy mají shader s větrem a „chomáči“ listí. Řeka Morava má vlastní vodní shader.
-- CJ je realistické tělo (basemesh CC BY) oblečené v Blenderu do bílého tílka, volných džínů a tenisek. Pohyb řídí procedurální kostra (běh, skok, dopad, úhyb, zásah).
+- Realistické proporce a PBR materiály na všem. Jeden vlastní shader `Railway/Surface` (surface shader, Built-in RP) zvládá UV textury importovaných modelů s mapami ORM, skutečné triplanární mapování v metrech pro generovanou geometrii, režim „taška nahoře / omítka na bocích“ pro střechy a procedurální okna fasád a vozů, která se večer náhodně rozsvítí.
+- Textury jsou sady z Poly Haven (CC0, barva + normála + ORM), viz [TEXTURES.md](TEXTURES.md). Natřený plech vozů a cisteren používá jen reliéf, barvu určuje livrej.
+- Rim světlo v barvě oblohy pro ortografickou kameru, makro variace proti opakování dlaždic, kontaktní ztmavení u země a specular anti-aliasing.
+- Osvětlení: hlavní světlo z boku (−55°), jedna stabilní kaskáda stínů, ambient a odrazy z oblohy (reflection probe). Šest presetů denní doby s vlastní oblohou, mlhou a barevným laděním (bloom, ACES, vinětace).
+- Postavy: CJ (fanouškovský model ze Sketchfabu), revizor a podchodový alchymista jsou texturované modely s Humanoid kostrou. Pohyb řídí mocap animace Quaternius Universal Animation Library (běh podle rychlosti bez klouzání nohou, odraz, let, dopad, zásah, výhra). Nad nimi je procedurální vrstva: náklon v zatáčce, squash & stretch, salto při dvojskoku a prach.
+- Vozidla (ČD 810, osobní vůz Bdt, nákladní vozy, cisterny) se staví v enginu přesně na délku plošiny ze stejných materiálů jako zbytek světa. Stromy jsou lípy ze Sketchfabu s průsvitnými listy, holubi mají animované mávání křídel.
 
 ## Rozhraní – železniční značení
 - **Menu**: odjezdová tabule „ODJEZDY“ s LED rastrem. Sloupce: rekord, číslo vlaku, směr (stanice), obtížnost a číslo trati. Vlevo je karta vybrané trati.
@@ -41,3 +52,9 @@ Obtížnost roste plynule. Šířka střech klesá z 10 na 7 m, výška roste a�
 
 ## Zvuk
 Viz [AUDIO.md](AUDIO.md). Pauza zastaví celý mix, hlášení se zobrazí jen tehdy, když opravdu zazní.
+
+## Tým, platforma a rozsah
+- **Tým:** Jan Richtermoc a Jakub Šálek. Kdo co dělal, je v README v sekci Autoři a v historii Gitu.
+- **Platforma:** Windows 10/11 (x64, DirectX 11) a macOS (universal: Apple silicon i Intel). Ovládání klávesnicí, v menu i myší; funguje i herní ovladač.
+- **Rozsah verze 1.1:** deset tratí, jeden hráč, lokální rekordy. Mimo rozsah: multiplayer, online žebříčky, editor tratí, mobilní verze.
+

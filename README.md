@@ -1,12 +1,12 @@
 # SuperCigos
 
-**[⬇ Stáhnout hru pro Windows (ZIP)](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/SuperCigos-Windows.zip)** · [macOS (Apple Silicon)](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/SuperCigos-macOS.zip) · [všechna vydání](https://github.com/JanRichtermoc/Ceske_drahy/releases)
+**[⬇ Windows (ZIP)](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/SuperCigos-Windows.zip)** · **[⬇ macOS – Apple silicon i Intel (ZIP)](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/SuperCigos-macOS.zip)** · [všechna vydání](https://github.com/JanRichtermoc/Ceske_drahy/releases)
 
 ![Hlavní menu – odjezdová tabule](docs/menu.png)
 
 ## Popis hry
 
-*SuperCigos* je 2,5D arkádová plošinovka pro jednoho hráče. Carl „CJ“ Johnson se snaží stihnout poslední spoj. Cestou proskáče **deset skutečných železničních stanic Olomouce** po střechách vagonů, cisteren a kontejnerů. Pod nohama mu přitom překážejí revizoři, holubi, pára a podchodoví alchymisté s obřími injekcemi.
+*SuperCigos* je 2,5D arkádová plošinovka pro jednoho hráče. Carl „CJ“ Johnson se snaží stihnout poslední spoj. Cestou proskáče **deset skutečných železničních stanic Olomouce** po střechách vagonů, cisteren a kontejnerů. Pod nohama mu přitom překážejí revizoři s brašnami, holubi, pára a podchodoví alchymisté s obřími injekcemi.
 
 **Cíl:** projet každou trať od startovního nástupiště do cíle co nejrychleji. Po dojetí se ukáže **jízdenka s časem** a osobním rekordem trati (razítko „NOVÝ REKORD“), dále body, sebrané jízdenky, odrazy a nejvyšší kombo. Rekordy se ukládají lokálně a zobrazují se v menu na odjezdové tabuli.
 
@@ -15,7 +15,7 @@
 - Na začátku má hráč 3 životy, na poslední trati 2. Pád mezi vagony nebo zásah stojí jeden život. Po ztrátě všech životů „ujel vlak“ a trať se opakuje.
 - Jízdenky a skok protivníkům na hlavu dávají body. Rychlý sled akcí zvyšuje násobič až na ×5.
 - Varování před útoky: žlutá kontrolka znamená, že revizor hodí brašnu, zelená ohlašuje létající injekci. Oranžové blikání roštu varuje před párou a v Nemilanech výstraha ohlašuje poryv protivětru.
-- Injekce způsobí nákazu, která zpomaluje. Lékárnička ji vyléčí a vrátí život. Tvarůžek dá krátké zrychlení a růžový kufr vystřelí vysoko.
+- Injekce způsobí nákazu, která zpomaluje. Lékárnička ji vyléčí a vrátí život (nejvýš do počtu životů trati). Krabička tvarůžků dá krátké zrychlení a růžový kufr vystřelí vysoko.
 - Ztráta zaostření okna hru pozastaví a čas se během pauzy nepočítá.
 
 ### Tratě
@@ -27,7 +27,7 @@ Názvy odpovídají stanicím a zastávkám v Olomouci (cs.wikipedia, kategorie 
 | 1 | Olomouc hl. n. | výpravní budova, podchod, výuka dvojskoku a kufrů | ● |
 | 2 | Olomouc-Smetanovy sady | park, pavilon Výstaviště Flora, Palmový skleník, víc kufrových pružin | ● |
 | 3 | Olomouc-Nová Ulice | Fakultní nemocnice, sanitky, tramvaj Tatra T3, víc injekcí i lékárniček | ●● |
-| 4 | Olomouc město | měšťanské domy, věže sv. Mořice, radnice, katedrály sv. Václava a Sloup Nejsvětější Trojice, posouvající se vagony | ●●● |
+| 4 | Olomouc město | měšťanské domy, věže sv. Mořice, radnice, katedrála sv. Václava a Sloup Nejsvětější Trojice, posouvající se vagony | ●●● |
 | 5 | Olomouc Hodolany | lokomotivní depo, výtrysky páry | ●●● |
 | 6 | Olomouc-Hejčín | most přes řeku Moravu, topoly, pád do vody | ●●● |
 | 7 | Olomouc-Řepčín | vlečky, sila, kontejnery, vysoké cisterny, soumrak | ●●●● |
@@ -35,45 +35,58 @@ Názvy odpovídají stanicím a zastávkám v Olomouci (cs.wikipedia, kategorie 
 | 9 | Nemilany | pole a větrolamy při západu slunce, nárazy protivětru | ●●●● |
 | 10 | Olomouc přednádraží | noční seřadiště, finále se dvěma životy | ●●●●● |
 
-![Olomouc město](docs/gameplay.png)
+![Olomouc město: revizor, tramvaj a posouvající se vagony](docs/gameplay.png)
+
+| Nemilany při západu slunce | Noční přednádraží |
+|---|---|
+| ![Nemilany](docs/nemilany.png) | ![Olomouc přednádraží v noci](docs/night.png) |
 
 ## Ovládání
 
-Hra se ovládá klávesnicí; v menu jde použít i myš.
+Hra se ovládá klávesnicí; v menu jde použít i myš. Funguje také herní ovladač (Xbox / PlayStation).
 
-| Klávesa | Akce |
-|---|---|
-| A / D nebo ← / → | pohyb doleva / doprava |
-| Mezerník, W nebo ↑ | skok; další stisk ve vzduchu = dvojskok; krátký stisk = nižší skok |
-| Shift | rychlý úhyb (krátce nezranitelný, pak se nabíjí) |
-| R | návrat na poslední checkpoint; na výsledkové obrazovce opakování trati |
-| Esc | pauza / pokračování; na výsledkové obrazovce návrat do menu; zavření nastavení |
-| Enter | start vybrané trati / další trať / nový pokus |
-| ↑ / ↓ (W / S) v menu | výběr trati na odjezdové tabuli (také najetím myší) |
-| M | zapnutí / vypnutí zvuku |
-| Alt + Enter | celá obrazovka / okno (také v Nastavení) |
+| Klávesa | Ovladač | Akce |
+|---|---|---|
+| A / D nebo ← / → | levá páčka, D-pad | pohyb doleva / doprava |
+| Mezerník, W nebo ↑ | A / ✕ | skok; další stisk ve vzduchu = dvojskok; krátký stisk = nižší skok |
+| S nebo ↓ (ve vzduchu) | páčka / D-pad dolů | rychlý pád |
+| Shift | X / ▢ nebo RB | rychlý úhyb (krátce nezranitelný, pak se nabíjí) |
+| R | Y / △ | návrat na poslední checkpoint; na výsledkové obrazovce opakování trati |
+| Esc | Start | pauza / pokračování; na výsledkové obrazovce návrat do menu; zavření nastavení |
+| Enter | A / ✕ | start vybrané trati / další trať / nový pokus |
+| ↑ / ↓ (W / S) v menu | D-pad | výběr trati na odjezdové tabuli (také najetím myší) |
+| M | | zapnutí / vypnutí zvuku |
+| Alt + Enter (jen Windows) | | celá obrazovka / okno; na Macu přes Nastavení nebo zelené tlačítko okna |
 
 ![Výsledková jízdenka](docs/results.png)
 
 ## Postup spuštění
 
-### Windows (doporučeno)
-1. Stáhni **[SuperCigos-Windows.zip](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/SuperCigos-Windows.zip)** ze stránky [Releases](https://github.com/JanRichtermoc/Ceske_drahy/releases).
+### Windows
+1. Stáhni **[SuperCigos-Windows.zip](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/SuperCigos-Windows.zip)**.
 2. Klikni na ZIP pravým tlačítkem a zvol **Extrahovat vše…**. Hra nejde spustit přímo z neotevřeného ZIPu.
-3. Ve složce `SuperCigos` spusť **`SuperCigos.exe`**. Soubory `UnityPlayer.dll`, `SuperCigos_Data` a `MonoBleedingEdge` musí zůstat vedle exe.
+3. Ve složce `SuperCigos` spusť **`SuperCigos.exe`**. Celá složka musí zůstat pohromadě: `UnityPlayer.dll`, `SuperCigos_Data` a `MonoBleedingEdge` leží vedle exe.
 4. Build není podepsaný, takže Windows SmartScreen může ukázat „Systém Windows ochránil váš počítač“. Klikni na **Další informace → Přesto spustit**.
 
-Požadavky: Windows 10 nebo 11 (64 bit), grafická karta s DirectX 11, asi 200 MB volného místa. Instalace ani připojení k internetu nejsou potřeba.
+Požadavky: Windows 10 nebo 11 (64 bit), grafická karta s DirectX 11, asi 250 MB volného místa. Instalace ani internet nejsou potřeba.
 
-### macOS (Apple Silicon)
-1. Stáhni a rozbal [SuperCigos-macOS.zip](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/SuperCigos-macOS.zip).
-2. Aplikace není notarizovaná. Při prvním spuštění na ni klikni pravým tlačítkem a zvol **Otevřít**, nebo v Terminálu spusť `xattr -dr com.apple.quarantine SuperCigos.app`.
+### macOS (Apple silicon i Intel)
+1. Stáhni **[SuperCigos-macOS.zip](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/SuperCigos-macOS.zip)** a rozbal ho dvojklikem. Aplikaci `SuperCigos.app` můžeš přesunout do složky Aplikace.
+2. Aplikace je podepsaná jen lokálně (ad hoc), ne certifikátem Apple Developer, takže ji macOS při prvním spuštění zablokuje:
+   - **macOS 15 a novější:** otevři aplikaci, v hlášce „Apple nemohl ověřit…“ klikni na **Hotovo**. Pak otevři **Nastavení systému → Soukromí a zabezpečení**, dole u „Aplikace SuperCigos byla zablokována“ klikni na **Přesto otevřít** a potvrď heslem.
+   - **macOS 13–14:** klikni na aplikaci pravým tlačítkem, zvol **Otevřít** a v dialogu znovu **Otevřít**.
+3. Pokud macOS hlásí, že je aplikace **„poškozená“**, odstraň karanténní příznak v Terminálu (uprav cestu podle toho, kde aplikace je):
+   ```sh
+   xattr -dr com.apple.quarantine ~/Downloads/SuperCigos.app
+   ```
+
+Požadavky: macOS 12 nebo novější, Mac s Apple silicon nebo Intel (universal aplikace).
 
 ### Ze zdrojového kódu v Unity
 1. Naklonuj repozitář: `git clone https://github.com/JanRichtermoc/Ceske_drahy.git`.
 2. V Unity Hub zvol **Add → Add project from disk**, vyber složku a otevři ji v Unity **6000.6.8f1**. Při prvním otevření se importují balíčky a assety, což trvá několik minut.
 3. Otevři scénu `Assets/Scenes/OlomoucHlavniNadrazi.unity` a stiskni **Play**.
-4. Vlastní build: menu **SuperCigos → Build Windows** vytvoří `Builds/Windows/SuperCigos/SuperCigos.exe` a `Builds/SuperCigos-Windows.zip`, **SuperCigos → Build macOS** vytvoří `Builds/SuperCigos.app`. Windows build potřebuje v Unity Hub modul *Windows Build Support (Mono)*.
+4. Vlastní build: menu **SuperCigos → Build release** vytvoří `Builds/SuperCigos-macOS.zip` (universal, ad hoc podpis), `Builds/SuperCigos-Windows.zip` a `Builds/SHA256SUMS.txt`. Jednotlivě je spustí **Build macOS** a **Build Windows**. Windows build potřebuje v Unity Hub modul *Windows Build Support (Mono)*, macOS build modul *Mac Build Support (Mono)* a podpis běží jen na Macu.
 
 ## Použité technologie
 
@@ -81,67 +94,95 @@ Požadavky: Windows 10 nebo 11 (64 bit), grafická karta s DirectX 11, asi 200 M
 |---|---|
 | Herní engine | **Unity 6000.6.8f1**, Built-in Render Pipeline, lineární barevný prostor |
 | Jazyk | **C#** (.NET Standard 2.1, Mono) |
-| Herní logika | vlastní kinematický pohyb s pevným krokem 120 Hz a interpolací vykreslení; svět, tratě a kulisy generované z dat za běhu (`RailLevel`, `RailWorld`, `OlomoucBackdrops`) |
-| Grafika | vlastní shadery v HLSL/Cg: `Railway/Surface` (PBR, rim světlo, procedurální patina, emisní mapy, triplanární mapování), `Railway/Foliage` (vítr), `Railway/Water`, obloha s mraky a hvězdami; post-processing `RailPost` (bloom, ACES, barevné ladění, vinětace) |
+| Herní logika | vlastní kinematický pohyb s pevným krokem 120 Hz a interpolací (`RailGame`, `RailMotor`); svět, tratě a kulisy generované z dat za běhu (`RailLevel`, `RailWorld`, `OlomoucBackdrops`) |
+| Vstup | **Input System 1.20** (klávesnice, myš, herní ovladač) |
+| Grafika | vlastní shadery v HLSL/Cg: `Railway/Surface` (PBR, triplanární mapování, ORM, procedurální okna, rim světlo), `Railway/SurfaceCutout`, `Railway/Foliage`, `Railway/Water`, `Railway/WorldText`; obloha s mraky a hvězdami; post-processing `RailPost` (bloom, ACES, barevné ladění, vinětace) |
+| Postavy a animace | Humanoid avatary, Animator Controller generovaný skriptem (`RailAnimatorBuilder`), mocap klipy **Quaternius Universal Animation Library** |
 | Rozhraní | Unity IMGUI s vlastním vykreslováním (odjezdová tabule, HUD, jízdenka), fonty Barlow a Barlow Condensed |
-| 3D modely | **glTFast** (import glTF/GLB), **Blender 5.2** (headless Python skripty v `Tools/blender`), **Sketchfab Download API** (`Tools/sketchfab_download.py`) |
-| Testy | **Unity Test Framework** (NUnit), EditMode a Play Mode testy |
-| Nástroje | Unity CLI / MCP Pipeline (`Tools/unity_mcp.py`) pro řízení editoru, testy a buildy; Git a GitHub |
-| Assety | modely Sketchfab (CC BY), textury ambientCG (CC0), zvuky Freesound (CC0), syntetický hlas Piper |
+| 3D modely a textury | **Blender 5.2** (headless Python skripty v `Tools/blender`), **Sketchfab Download API** (`Tools/sketchfab_download.py`), **Poly Haven API** (`Tools/polyhaven_download.py`); modely se do Unity importují jako FBX |
+| Testy | **Unity Test Framework** (NUnit): EditMode testy a integrační kontroly v Play Mode |
+| Nástroje | Unity CLI / MCP Pipeline pro řízení editoru, testy a buildy; Blender MCP pro kontrolu modelů; Git a GitHub |
+| Assety | modely Sketchfab (CC BY 4.0), animace Quaternius (CC0), textury Poly Haven (CC0), zvuky Freesound (CC0), syntetický hlas Piper |
 
 ## Testy
 
-- **EditMode testy** (`Assets/Tests/Editor`, Unity Test Framework). Spusť je ve *Window → General → Test Runner → EditMode → Run All*. Zahrnují 54 statických kontrol všech tratí (unikátní klíče rekordů, shoda druhů plošin, zón a stanic, entity stojí na plošinách, dosažitelnost každé mezery podle fyziky skoku a checkpointy na nástupištích) a jeden integrační test, který sám vstoupí do Play Mode.
-- **Integrační kontroly** (`RailSmokeTests.Run()`), celkem 28. Ověřují dopad, zranění a nezranitelnost, prohru i to, že se po ní už nesbírají předměty. Dál pád a checkpoint, variabilní skok, coyote time, buffer skoku, holuba, brašnu revizora, vezení na vagonu, kufr (puštění skoku ho nezkrátí), dvojskok, úhyb, nákazu, lékárničku, páru a uložení rekordu času. Skriptovaný běžec projede všech 10 tratí a nakonec se ověří úklid při návratu do menu. Testy po sobě obnoví hráčovy rekordy.
-- **Ruční testovací scénář**: [docs/TESTOVANI.md](docs/TESTOVANI.md).
+- **EditMode testy** (`Assets/Tests/Editor`, celkem 72). Ve Unity: *Window → General → Test Runner → EditMode → Run All*.
+  - `RailLevelTests` (62): data všech tratí (unikátní klíče rekordů, shoda druhů plošin, zón a stanic, protivníci a předměty stojí na plošinách, checkpointy na nástupištích) a fyzika pohybu (simulace skoku odpovídá výpočtu dosahu, každou mezeru jde přeskočit, krátký stisk dá nízký skok, rozjezd a brzdění jsou rychlé, pád je omezený).
+  - `RailAssetTests` (9): postavy mají platný Humanoid avatar bez obličejových kostí, animační klipy a stavy Animatoru existují, textury mají správný typ importu.
+  - `RailSmokeTestRunner` (1): sám vstoupí do Play Mode a spustí integrační kontroly.
+- **Integrační kontroly** (`RailSmokeTests.Run()`, 40 kontrol) běží proti skutečnému pohybu: dopad, zranění a nezranitelnost, prohra, pád a checkpoint, hranice světa, variabilní skok, coyote time, buffer skoku, omezení pádu a rychlý pád, korekce hrany, holub, mířená brašna revizora, vezení na vagonu (i s jízdenkami), kufr, dvojskok, odraz od protivníka, úhyb, nákaza a lékárnička, pára, uložení rekordu, postup kampaní a úklid při návratu do menu. Skriptovaný běžec projede všech 10 tratí a ověří, že vozy sedí na svých plošinách. Testy po sobě obnoví hráčovy rekordy.
+- **Ruční testovací scénář a protokol**: [docs/TESTOVANI.md](docs/TESTOVANI.md).
 
-Z příkazové řádky přes Unity CLI (MCP Pipeline):
+Z příkazové řádky (Unity v dávkovém režimu, výsledky v NUnit XML):
 
 ```sh
-~/.unity/bin/unity cmd test run --mode EditMode --async-tests true
-~/.unity/bin/unity cmd test status
+# macOS
+"/Applications/Unity/Hub/Editor/6000.6.8f1/Unity.app/Contents/MacOS/Unity" -batchmode -projectPath . \
+  -runTests -testPlatform EditMode -testResults TestResults.xml
+# Windows (PowerShell)
+& "C:\Program Files\Unity\Hub\Editor\6000.6.8f1\Editor\Unity.exe" -batchmode -projectPath . `
+  -runTests -testPlatform EditMode -testResults TestResults.xml
 ```
 
 ## Struktura projektu
 
 ```
-Assets/Scripts        herní kód (assembly CeskeDrahy)
-  RailGame.cs         stavový automat, pohyb, kolize, checkpointy, rekordy
-  RailLevel.cs        data 10 tratí
-  RailWorld.cs        stavba trati, vagony, světlo, materiály
-  OlomoucBackdrops.cs kulisy jednotlivých stanic
-  RailChaos.cs        arkádová pravidla (kombo, nákaza, pružiny, protivníci)
-  RailHUD.cs          menu, HUD, pauza, výsledková jízdenka, nastavení
-  CjRig.cs            proxy kostra a retarget na skinned model CJ
-  RailPost.cs         post-processing
-Assets/Resources      shadery, materiály, modely, textury, fonty, zvuky
-Assets/Tests/Editor   EditMode testy a integrační kontroly
-Assets/Editor         příprava scény a buildy
-Tools                 Sketchfab, Unity MCP, Blender skripty
-docs                  design, testování, licence, podklady
+Assets/Scripts           herní kód (assembly CeskeDrahy)
+  RailGame.cs            stavový automat, pohyb, kolize, kamera, checkpointy, rekordy
+  RailMotor.cs           matematika pohybu (rozjezd, skok, dosah) sdílená s testy
+  RailInput.cs           klávesnice a ovladač přes Input System
+  RailLevel.cs           data 10 tratí
+  RailWorld.cs           stavba trati, vozidla, materiály, světlo
+  OlomoucBackdrops.cs    kulisy jednotlivých stanic
+  RailChaos.cs           arkádová pravidla (kombo, nákaza, pružiny, protivníci)
+  RailActor.cs           animovaní revizoři a alchymisté
+  CjRig.cs               CJ: Animator, náklon, squash & stretch, salto, prach
+  RailMaterials.cs       převod importovaných modelů na herní shadery
+  RailTextures.cs        katalog textur Poly Haven (generovaný)
+  RailHUD.cs             menu, HUD, pauza, výsledková jízdenka, nastavení
+  RailAudio.cs, RailPost.cs, RailAutopilot.cs, RailBenchmark.cs
+Assets/Resources         shadery, materiály, modely, animace, textury, fonty, zvuky
+Assets/Animation/UAL     mocap klipy (Quaternius, CC0)
+Assets/Editor            import modelů, generování Animatorů, příprava scény, buildy
+Assets/Tests/Editor      EditMode testy a integrační kontroly
+Tools                    stahování assetů, Blender skripty, generátory textur a ikony
+docs                     design, testování, ověření, licence, deníky a retrospektivy
 ```
+
+## Dokumentace
+
+- [Design dokument](docs/DESIGN.md)
+- [Ruční testovací scénář a protokol](docs/TESTOVANI.md) a [ověření buildů a výkonu](docs/VALIDATION.md)
+- Deník selhání AI: [Jan Richtermoc](docs/DENIK_AI_Richtermoc.md), [Jakub Šálek](docs/DENIK_AI_Salek.md); [podklady k incidentům](docs/AI_PODKLADY.md)
+- Retrospektiva: [Jan Richtermoc](docs/RETROSPEKTIVA_Richtermoc.md), [Jakub Šálek](docs/RETROSPEKTIVA_Salek.md)
+- [Textury](docs/TEXTURES.md), [zvuky](docs/AUDIO.md)
+
+## Autoři
+
+- **Jakub Šálek** – první hratelná verze v Unity (pohyb po střechách, Sketchfab assety, MCP nástroje), přesun hry do Olomouce, arkádový chaos a nahrané zvuky, první model CJ a dvě pokročilé tratě.
+- **Jan Richtermoc** – deset tratí podle olomouckých stanic, grafika a shadery, rozhraní v železničním stylu s výsledkovou jízdenkou, testy, Windows a macOS buildy a verze 1.1 (nový pohyb, postavy s animacemi, vozidla, dokumentace).
+
+Podrobně je to vidět v historii Gitu (`git shortlog -sn`).
 
 ## Předlohy a licence
 
-3D modely ze Sketchfabu (CC BY 4.0, atribuce a licence v `docs/*-attribution.json` a `docs/*-license.txt`):
+3D modely ze Sketchfabu (CC BY 4.0; atribuce a licence v `docs/*-attribution.json` a `docs/*-license.txt`):
 
-- [Free Rigged Male Basemesh](https://sketchfab.com/3d-models/free-rigged-male-basemesh-b8de3373addd4decac40400ee96c62e0) – **Filip**. Tělo CJ: v Blenderu oblečené (tílko, džíny, tenisky, vlasy), převedené do metrů a řízené herní kostrou.
-- [Tatra t3 (reworked)](https://sketchfab.com/3d-models/tatra-t3-reworked-a932f7c3850643fd92dadad7f5771d6c) – **Randonavt**. Tramvaj, zjednodušená ze 141 tisíc na 26 tisíc trojúhelníků.
+- [GTA V (Mod) – Carl „CJ“ Johnson](https://sketchfab.com/3d-models/gta-v-mod-carl-cj-johnson-a539732c028d43b7be32977630b26250) – **Zorg_Sinister**. CJ: v Blenderu opravené normály a rty, T-póza, převod do metrů a Humanoid kostra (`Tools/blender/character_prep.py`).
+- [Dutch conductor for railway (NS) from the 90's](https://sketchfab.com/3d-models/dutch-conductor-for-railway-ns-from-the-90s-acb5b19a36b74308bc667e216cca0a18) – **ustoopia**. Revizor, zjednodušený a přebarvený do ČD.
+- [old man in coat – human riged model](https://sketchfab.com/3d-models/old-man-in-coat-human-riged-model-e8052f5928ef42f1ae5b5af02eb1a36b) – **Kasit Studio**. Podchodový alchymista.
+- [Animated-pigeon-3d-model](https://sketchfab.com/3d-models/animated-pigeon-3d-model-f1397b88dc6744578767fa3253ac7bbc) – **xyina124**. Holubi s animací mávání.
+- [Linden tree](https://sketchfab.com/3d-models/linden-tree-c0c3aa73cc9945d2a36c01a0d8d6d4bb) – **Georgeous**. Stromy (prořídlé listy, zjednodušená kůra).
+- [Tatra t3 (reworked)](https://sketchfab.com/3d-models/tatra-t3-reworked-a932f7c3850643fd92dadad7f5771d6c) – **Randonavt**. Tramvaj, zjednodušená ze 141 tisíc na 27 tisíc trojúhelníků a sloučené materiály.
 - [Wooden Park Bench](https://sketchfab.com/3d-models/wooden-park-bench-e53ad46c604c44e59a98bad27041cb19) – **TheMadraver**. Lavičky na nástupištích.
-- [Low-Poly Lamp Post](https://sketchfab.com/3d-models/low-poly-lamp-post-c466684e819a4428b6d8ed50537615e4) – **Memorie**. Lampy na nástupištích.
-- [CD810 motor train](https://sketchfab.com/3d-models/cd810-motor-train-121922992c4c44c9a121a40c82c79382) – **voxellation**. Motorový vůz.
-- [Railway Track 3D scan](https://sketchfab.com/3d-models/railway-track-3d-scan-21a0ed90f355495fb80c3dcc92a94b10) – **grafi**. Kolejové lože.
-- [Brick wall material](https://sketchfab.com/3d-models/brick-wall-material-6ef775e935da4d159e40098b06ad33d3) – **Ilya.Krupenkov**. Zdivo.
-- [Cracked Concrete Old 3D Scan](https://sketchfab.com/3d-models/cracked-concrete-old-3d-scan-2d01ca3fd8fb4e96bf591110389a128c) – **grafi**. Nástupiště.
 
-Textury: [docs/TEXTURES.md](docs/TEXTURES.md) (ambientCG, CC0). Zvuky: [docs/AUDIO.md](docs/AUDIO.md). Fonty: Barlow, SIL Open Font License ([docs/fonts-OFL.txt](docs/fonts-OFL.txt)).
+Animace: [Universal Animation Library](https://quaternius.com) – **Quaternius**, CC0 ([docs/ual-license.txt](docs/ual-license.txt)). Textury: Poly Haven, CC0 ([docs/TEXTURES.md](docs/TEXTURES.md)). Zvuky: Freesound CC0 a hlas Piper ([docs/AUDIO.md](docs/AUDIO.md)). Fonty: Barlow, SIL Open Font License ([docs/fonts-OFL.txt](docs/fonts-OFL.txt)). Vozidla, budovy, lampy, potisky předmětů a ikona vznikly v projektu.
 
 Ke stažení modelů slouží oficiální Sketchfab Download API. Klíč se zadává skrytě nebo proměnnou `SKETCHFAB_API_TOKEN` a není součástí projektu ani historie Gitu:
 
 ```sh
-SKETCHFAB_API_TOKEN=... python3 Tools/sketchfab_download.py a932f7c3850643fd92dadad7f5771d6c --output .local/tatra
-blender --background --factory-startup \
-  --python Tools/blender/prop_import.py -- .local/tatra/scene.gltf Assets/Resources/Models/Props/tatra_t3.glb length 14.6 26000 512
+SKETCHFAB_API_TOKEN=... python3 Tools/sketchfab_download.py a539732c028d43b7be32977630b26250 --output .local/cj
+Blender -b --factory-startup -P Tools/blender/character_prep.py -- --profile cj --source .local/cj/scene.gltf --out .local/work/cj
 ```
 
-CJ je postava z Grand Theft Auto: San Andreas od Rockstar Games. Tento fanouškovský školní projekt nepoužívá žádné soubory z GTA. Postava vznikla z volně licencovaného basemeshe a vlastních materiálů. Hra není oficiálním produktem Českých drah ani Rockstar Games.
+**Upozornění:** CJ je postava ze hry Grand Theft Auto: San Andreas od Rockstar Games. SuperCigos je nekomerční fanouškovský školní projekt. Model CJ je fanouškovský model ze Sketchfabu (CC BY 4.0, autor Zorg_Sinister); hra nepoužívá žádné soubory z her GTA. Hra není oficiálním produktem Rockstar Games ani Českých drah; názvy stanic a barvy vozů slouží jen jako kulisa.

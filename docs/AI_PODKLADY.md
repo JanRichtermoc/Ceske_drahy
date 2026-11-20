@@ -13,3 +13,18 @@
 | 9 | Spustit Blender. | Předpokládala cestu `/Applications/Blender.app`, ale aplikace je na externím disku. | `no such file or directory`. | Použila se skutečná cesta z `mdfind`. |
 | 10 | Návrh dat deseti tratí. | Jeden protivník v původní trati a jeden tvarůžek v nové trati „visely“ v mezeře mezi vagony. | Nový EditMode test `EnemiesAndPickupsStandOnPlatforms`. | Souřadnice se posunuly na plošiny. |
 | 11 | Zastávky v Olomouci. | Jako jednu z možností navrhla „Olomouc-Chválkovice“, kterou ale nebylo možné ověřit. | Dotaz na Wikipedii (kategorie *Železniční stanice v Olomouci*). | Nahrazena ověřenou zastávkou Olomouc-Nová Ulice. |
+
+## Verze 1.1
+
+| # | Co se mělo stát | Co AI udělala špatně | Jak se to poznalo | Jak se to opravilo |
+|---|---|---|---|---|
+| 12 | Ověřit stisky kláves simulované přes Unity MCP. | Spoléhala na `wasPressedThisFrame` z Input System, který simulované stisky mezi snímky nezachytí. | Postava na simulovaný skok nereagovala, i když `isPressed` hlásil stisk. | `RailInput` detekuje hranu stisku sám z `isPressed` (polling). |
+| 13 | Upravit kód během testování v Play Mode. | Spustila rekompilaci, zatímco hra běžela. | Konzole se zaplnila desítkami tisíc `NullReferenceException`. | Před každou kompilací se Play Mode ukončí; postup je v pracovním logu. |
+| 14 | Natočit CJ čelem ke kameře. | Odhadovala směr modelu podle polohy špiček nohou a odhad vyšel opačně. | CJ běžel zády k hráči. | Heuristika zmizela, model má pevně danou orientaci (−Z). |
+| 15 | Smyčka mávání holuba. | Export z Blenderu zapekl celý rozsah scény (10,4 s) místo akce mávání (4 s). | Holub dlouho visel bez pohybu; asset test délky klipu. | Rozsah scény se před exportem nastaví podle akce. |
+| 16 | Postavit stromy z modelu lípy. | Obal modelu přepsal rotaci kořene FBX, která převádí osy z Blenderu. | Na snímcích z prohlídky tratí ležely kmeny vodorovně. | Rotaci a měřítko nese obalový objekt, model si nechá vlastní rotaci. |
+| 17 | Okna na nových vozech ČD 810 a Bdt. | Shader odečetl okraj i ve svislém směru a modul okna měl stejnou výšku jako pás oken, takže se nevykreslilo žádné okno. | Vozy na snímcích neměly okna. | Okraj platí jen podél vozu, modul je o něco nižší než pás. |
+| 18 | Použít model LED lampy ze Sketchfabu. | Navrhla model bez kontroly geometrie; po importu měl rozměr 1 × 1 × 1 m a v náhledu nebyl vidět. | Kontrola rozměrů a render v Blenderu. | Lampa se staví procedurálně (`RailWorld.StreetLight`). |
+| 19 | Nahradit funkci `Lamp` v kulisách. | Skript pro náhradu textu zasáhl špatný úsek a poškodil `OlomoucBackdrops.cs`. | 20 chyb kompilace na řádcích, které v souboru nemají být. | Soubor se opravil podle `git diff`, náhrady se dělají přes jednoznačné úseky. |
+| 20 | Barvy textu v HUD. | Převod barev do lineárního prostoru použila jen na plochy, text zůstal bez převodu a vypadal vybledle. | Měření pixelů: stejná oranžová měla na ploše `#F5B335`, v textu `#FBDA7E`. | `Label()` převádí barvy stejně jako `Fill()`. |
+| 21 | Připravit model CJ pro Humanoid animace. | Zapekla pózu obličejových kostí z modu, která roztrhla horní ret. | Detailní portrét pro ikonu aplikace. | `character_prep.py` vyhladí oblast rtů po zapečení pózy. |

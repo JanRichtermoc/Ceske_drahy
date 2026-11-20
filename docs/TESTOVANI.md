@@ -1,6 +1,13 @@
 # Ruční testovací scénář
 
-Projdi na sestaveném buildu (Windows `SuperCigos.exe` nebo macOS aplikace) v okně 1280×720 i na celé obrazovce. U každého kroku zapiš OK nebo popis chyby.
+Projdi na sestaveném buildu (Windows `SuperCigos.exe` nebo macOS aplikace) v okně 1280×720 i na celé obrazovce. U každého kroku zapiš OK nebo popis chyby do protokolu na konci.
+
+## 0. Instalace (stažení z GitHub Releases jako běžný uživatel)
+| # | Krok | Očekávaný výsledek |
+|---|---|---|
+| 0.1 | Windows: stáhni `SuperCigos-Windows.zip` z README, **Extrahovat vše…**, spusť `SuperCigos\SuperCigos.exe`. Pokud se objeví SmartScreen, zvol **Další informace → Přesto spustit**. | Hra se spustí v okně 1280×720 s ikonou SC, bez úvodního loga Unity. |
+| 0.2 | macOS (jiný Mac než ten, na kterém vznikl build): stáhni `SuperCigos-macOS.zip` přes Safari, rozbal dvojklikem a spusť. Postupuj podle README (macOS 15: Nastavení systému → Soukromí a zabezpečení → **Přesto otevřít**). | Po povolení se hra spustí a při dalším spuštění se už neptá. Na Macu s Intelem i s Apple silicon. |
+| 0.3 | Ukonči hru a spusť ji znovu. | Nastavení a rekordy zůstaly. |
 
 ## 1. Spuštění a menu
 | # | Krok | Očekávaný výsledek |
@@ -16,7 +23,9 @@ Projdi na sestaveném buildu (Windows `SuperCigos.exe` nebo macOS aplikace) v ok
 | # | Krok | Očekávaný výsledek |
 |---|---|---|
 | 2.1 | Vyber trať 1 a stiskni Enter. | Krátce se ukáže „PŘISTAVUJEME SOUPRAVU…“, pak trať. Stopky běží od 00:00.00. |
-| 2.2 | A/D, mezerník, krátký stisk mezerníku. | Běh, skok. Krátký stisk dá nižší skok, druhý stisk ve vzduchu dvojskok. |
+| 2.2 | A/D, mezerník, krátký stisk mezerníku. | Běh se rozjede i zastaví skoro okamžitě. Krátký stisk dá nízký skok, druhý stisk ve vzduchu dvojskok (CJ udělá salto). |
+| 2.2a | Ve vzduchu drž S nebo ↓. | CJ padá znatelně rychleji. |
+| 2.2b | Skoč těsně pod hranu vyšší střechy. | Postava se ještě „vytáhne“ na střechu (korekce hrany), při větší chybě narazí do boku vagonu. |
 | 2.3 | Šlápni na růžový kufr a podrž mezerník. | Vysoký výskok. Puštění mezerníku ho nezkrátí. |
 | 2.4 | Shift. | Rychlý úhyb, ukazatel ÚHYB se vybije a znovu nabije. |
 | 2.5 | Seber jízdenku a skoč holubovi na hlavu. | Přičtou se body, ukáže se kombo a počet jízdenek x/y. |
@@ -49,5 +58,35 @@ Na každé trati ověř, že jde dohrát a že kulisy odpovídají stanici: park
 | 5.4 | CELÁ OBRAZOVKA. | Hra se přepne na celou obrazovku a zpět. |
 | 5.5 | Táhni posuvník ŘEV PŘI ZÁSAHU, ukonči a spusť hru. | Hodnota zůstala uložená. |
 
+## 6. Herní ovladač (volitelné)
+| # | Krok | Očekávaný výsledek |
+|---|---|---|
+| 6.1 | Připoj ovladač Xbox nebo PlayStation a v menu použij D-pad a A / ✕. | Výběr trati a start fungují. |
+| 6.2 | Na trati: levá páčka, A / ✕, X / ▢, Start. | Pohyb, skok, úhyb, pauza. |
+
 ## Automatické testy
-Ve Unity: *Window → General → Test Runner → EditMode → Run All*. Výsledek musí být 55 / 55 zelených. Integrační test sám vstoupí do Play Mode a projede všech deset tratí.
+Ve Unity: *Window → General → Test Runner → EditMode → Run All*. Výsledek musí být **72 / 72** zelených (62 kontrol tratí a fyziky, 9 kontrol assetů a 1 integrační test). Integrační test sám vstoupí do Play Mode, spustí 40 kontrol a projede všech deset tratí. Příkaz pro dávkový režim je v README.
+
+## Protokol
+
+Vyplň jeden protokol za každé testované zařízení. Chyby popiš tak, aby šly zopakovat (trať, místo, co jsi dělal).
+
+| Položka | Hodnota |
+|---|---|
+| Tester | |
+| Datum | |
+| Build (verze a soubor) | SuperCigos 1.1.0, `SuperCigos-…zip` |
+| Operační systém a verze | |
+| Procesor / grafická karta | |
+| Rozlišení a režim (okno / celá obrazovka) | |
+
+| Oddíl | Výsledek (OK / chyba) | Poznámka |
+|---|---|---|
+| 0. Instalace | | |
+| 1. Spuštění a menu | | |
+| 2. Hraní trati | | |
+| 3. Cíl a rekord | | |
+| 4. Tratě (1–10) | | |
+| 5. Nastavení | | |
+| 6. Herní ovladač | | |
+| FPS v pravém dolním rohu HUD (typická hodnota) | | |
