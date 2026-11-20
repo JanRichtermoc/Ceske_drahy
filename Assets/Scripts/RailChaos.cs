@@ -60,26 +60,23 @@ namespace CeskeDrahy
             for(int i=0;i<heals.Length;i++)
             {
                 var root=OnRoof("Lékárnička",heals[i],1.25f);
-                world.Box("Case",Vector3.zero,new Vector3(.6f,.5f,.24f),world.cream,root);
-                world.Box("Cross upright",new Vector3(0,0,-.14f),new Vector3(.12f,.32f,.025f),world.green,root);
-                world.Box("Cross crossbar",new Vector3(0,0,-.15f),new Vector3(.32f,.12f,.025f),world.green,root);
+                world.Box("Case",Vector3.zero,new Vector3(.6f,.5f,.24f),world.Printed("Medkit","Medkit",.2f,.5f),root);
+                world.Box("Handle",new Vector3(0,.29f,0),new Vector3(.22f,.06f,.06f),world.dark,root);
                 medkits[i]=root;medkitPositions[i]=root.localPosition;
             }
             float[] snacks=world.Level.Snacks;
             for(int i=0;i<snacks.Length;i++)
             {
                 var root=OnRoof("Tvarůžkové turbo",snacks[i],1.7f);
-                var disc=world.Box("Tvarůžek",Vector3.zero,new Vector3(.65f,.14f,.65f),world.gold,root,PrimitiveType.Cylinder);disc.localRotation=Quaternion.Euler(70,0,0);
-                world.Box("Cheese hole",new Vector3(.12f,.12f,-.19f),Vector3.one*.13f,world.rust,root,PrimitiveType.Sphere);
-                world.Box("Cheese hole",new Vector3(-.13f,-.1f,-.18f),Vector3.one*.09f,world.rust,root,PrimitiveType.Sphere);
+                world.Box("Tvarůžky",Vector3.zero,new Vector3(.66f,.44f,.22f),world.Printed("Tvaruzky","Tvaruzky",.25f,.4f),root);
                 cheeses[i]=root;cheesePositions[i]=root.localPosition;
             }
             float[] bounce=world.Level.Springs;
             for(int i=0;i<bounce.Length;i++)
             {
                 var root=world.Group("Pružící kufr",new Vector3(bounce[i],Surface(bounce[i]),0));
-                world.Box("Suitcase",new Vector3(0,.18f,0),new Vector3(1,.3f,.65f),world.Mat("Suitcase pink","#D9587B"),root);
-                world.Box("Lid",new Vector3(0,.38f,0),new Vector3(1.1f,.1f,.7f),world.gold,root);
+                world.Box("Suitcase",new Vector3(0,.2f,0),new Vector3(1,.34f,.65f),world.Printed("Suitcase","Suitcase",.1f,.55f),root);
+                world.Box("Handle",new Vector3(0,.41f,0),new Vector3(.3f,.07f,.08f),world.dark,root);
                 world.Sign("HOP!",new Vector3(0,.2f,-.35f),.038f,root);
                 springs[i]=root;
             }
@@ -245,7 +242,7 @@ namespace CeskeDrahy
             }
             for(int i=0;i<cheeses.Length;i++)if(cheeses[i].gameObject.activeSelf)
             {
-                cheeses[i].localPosition=cheesePositions[i]+Vector3.up*Mathf.Sin(game.simTime*3+i)*.17f;cheeses[i].Rotate(0,dt*100,0);
+                cheeses[i].localPosition=cheesePositions[i]+Vector3.up*Mathf.Sin(game.simTime*3+i)*.17f;cheeses[i].localRotation=Quaternion.Euler(0,Mathf.Sin(game.simTime*2.2f+i)*32,0);
                 if(Vector2.Distance(game.position+Vector2.up,cheeses[i].position)<.8f){cheeses[i].gameObject.SetActive(false);turbo=7;AddScore(200,"TVARŮŽKOVÉ TURBO!");game.Celebrate();}
             }
             for(int i=0;i<springs.Length;i++)

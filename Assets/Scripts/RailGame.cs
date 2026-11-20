@@ -107,7 +107,7 @@ namespace CeskeDrahy
             chaos=new RailChaos(this);
             for(int i=0;i<projectiles.Length;i++)
             {
-                projectiles[i]=world.Box("Revizorova brašna",Vector3.zero,new Vector3(.42f,.3f,.2f),world.rust);
+                projectiles[i]=world.Box("Revizorova brašna",Vector3.zero,new Vector3(.44f,.32f,.16f),world.Printed("Inspector bag","Bag",.05f,.3f));
                 projectiles[i].gameObject.SetActive(false);
             }
         }

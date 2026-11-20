@@ -23,7 +23,6 @@ namespace CeskeDrahy
                 case "Grass":return 2.0f;
                 case "Planks":return 2.0f;
                 case "SiloConcrete":return 8.0f;
-                case "CoachPaint":return 2.5f;
                 default:return 2f;
             }
         }
@@ -46,7 +45,6 @@ namespace CeskeDrahy
                 case "Grass":return 0.2387f;
                 case "Planks":return 0.0615f;
                 case "SiloConcrete":return 0.2446f;
-                case "CoachPaint":return 0.0455f;
                 default:return .2f;
             }
         }

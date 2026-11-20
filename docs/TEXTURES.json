@@ -133,14 +133,5 @@
     "url": "https://polyhaven.com/a/concrete_panels",
     "license": "CC0",
     "meanLinear": 0.2446
-  },
-  "CoachPaint": {
-    "slug": "blue_metal_plate",
-    "name": "Blue Metal Plate",
-    "tileMetres": 2.5,
-    "resolution": "2k",
-    "url": "https://polyhaven.com/a/blue_metal_plate",
-    "license": "CC0",
-    "meanLinear": 0.0455
   }
 }

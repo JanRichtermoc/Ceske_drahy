@@ -70,7 +70,8 @@ float FacadeWindow(float2 p, float2 extent, float faceSign, inout fixed3 albedo,
     float2 module = max(_FacadeModule.xy, .5);
     float margin = _FacadeParams.w;
     // Fit whole windows into the face, centred, with a margin around the edge.
-    float2 count = max(floor((extent - 2 * margin) / module), 0);
+    // Train window bands are one storey tall: their margin applies only along the car.
+    float2 count = max(floor((extent - 2 * float2(margin, _FacadeParams.y > 3.5 ? 0 : margin)) / module), 0);
     float2 origin = -count * module * .5;
     float2 q = (p - origin) / module;
     if (any(q < 0) || any(q >= count)) return 0;
@@ -78,9 +79,9 @@ float FacadeWindow(float2 p, float2 extent, float faceSign, inout fixed3 albedo,
     float2 f = frac(q);
     float style = _FacadeParams.y;
     float2 size = _FacadeModule.zw;
-    if (style > 2.5) size.x = .94;                       // ribbon windows run the whole module
+    if (style > 2.5 && style < 3.5) size.x = .94;        // ribbon windows run the whole module
     float2 lo = .5 - size * .5, hi = .5 + size * .5;
-    lo.y -= .06; hi.y -= .06;                           // windows sit a bit low in the storey
+    if (style < 3.5) { lo.y -= .06; hi.y -= .06; }      // building windows sit a bit low in the storey
     float2 inMin = f - lo, inMax = hi - f;
     float edge = min(min(inMin.x, inMax.x) * module.x, min(inMin.y, inMax.y) * module.y);
     float hash = RailHash(float3(cell, _FacadeParams.z + faceSign * 7.1));
@@ -97,7 +98,8 @@ float FacadeWindow(float2 p, float2 extent, float faceSign, inout fixed3 albedo,
     if (style < .5) bar = step(abs(local.x - .36) * module.x * size.x, .03);
     else if (style < 1.5) bar = step(abs(local.x - .5) * module.x * size.x, .03) + step(abs(local.y - .62) * module.y * size.y, .03);
     else if (style < 2.5) bar = step(abs(frac(local.x * 3) - .5) * module.x * size.x / 3, .025) + step(abs(local.y - .5) * module.y * size.y, .025);
-    else bar = step(abs(frac(local.x * 4) - .5) * module.x * size.x / 4, .03);
+    else if (style < 3.5) bar = step(abs(frac(local.x * 4) - .5) * module.x * size.x / 4, .03);
+    else bar = step(abs(local.y - .78) * module.y * size.y, .02);   // train window with a top hopper
     if (bar > 0) { albedo = _FacadeFrame.rgb; smooth = .35; return 0; }
     // Glass: sky reflection gradient, a curtain in some windows, recess shadow under the lintel.
     fixed3 glass = _FacadeGlass.rgb * lerp(.75, 1.25, local.y) * lerp(.85, 1.1, hash);

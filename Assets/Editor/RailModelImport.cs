@@ -14,6 +14,7 @@ public sealed class RailModelImport : AssetPostprocessor
     const string Characters = "Assets/Resources/Models/Characters/";
     const string Ual = "Assets/Animation/UAL/";
     const string Animals = "Assets/Resources/Models/Animals/";
+    const string Props = "Assets/Resources/Models/Props/";
 
     /// <summary>Clip name → (take, loop). Root motion stays on the bones; the game moves the character itself.</summary>
     public static readonly Dictionary<string, (string take, bool loop)> UalClips = new Dictionary<string, (string, bool)>
@@ -54,6 +55,16 @@ public sealed class RailModelImport : AssetPostprocessor
             importer.skinWeights = ModelImporterSkinWeights.Standard;
             importer.importCameras = importer.importLights = false;
             importer.isReadable = false;
+        }
+        else if (assetPath.StartsWith(Props) && assetPath.EndsWith(".fbx"))
+        {
+            // Static props prepared by Tools/blender/prop_prep.py; materials only for their names.
+            importer.animationType = ModelImporterAnimationType.None;
+            importer.importAnimation = false;
+            importer.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
+            importer.materialLocation = ModelImporterMaterialLocation.InPrefab;
+            importer.importTangents = ModelImporterTangents.CalculateMikk;
+            importer.importCameras = importer.importLights = false;
         }
         else if (assetPath.StartsWith(Animals))
         {

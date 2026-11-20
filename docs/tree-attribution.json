@@ -1,0 +1,8 @@
+{
+  "name": "Linden tree",
+  "author": "Georgeous",
+  "url": "https://sketchfab.com/3d-models/linden-tree-c0c3aa73cc9945d2a36c01a0d8d6d4bb",
+  "license": "http://creativecommons.org/licenses/by/4.0/",
+  "uid": "c0c3aa73cc9945d2a36c01a0d8d6d4bb",
+  "modifications": "Leaf cards thinned to 30 % and enlarged 1.5x, bark decimated to 8 %, normalised to 1 m height, textures resized to 1024 px (Tools/blender/prop_prep.py --profile tree)."
+}

@@ -135,9 +135,11 @@ public static class RailSmokeTests
                 g.StartLevel(level);
                 Check(g.lives==g.Level.Lives,"Advanced route starting health");
                 Check(Traverse(g),"Every roof and checkpoint must be reachable on route "+level);
+                Check(RollingStockFits(g,out string misfit),misfit);
                 passed.Add("advanced route "+level);
             }
-            g.StartLevel(0);g.Damage(3);g.Menu();
+            g.StartLevel(0);Check(RollingStockFits(g,out string firstMisfit),firstMisfit);passed.Add("rolling stock fits its platforms");
+            g.Damage(3);g.Menu();
             Check(g.mode==RailGame.Mode.Menu && (float)Field("shake").GetValue(g)==0 && g.chaos.infection==0,"Returning to the menu clears the run");
             Check(g.world.signals.TrueForAll(s=>!s.gameObject.activeSelf),"No inspector warning stays lit in the menu");passed.Add("menu cleanup");
             string result="PASS ("+passed.Count+"): "+string.Join("; ",passed);Debug.Log(result);return result;
@@ -152,6 +154,21 @@ public static class RailSmokeTests
     {
         var stun=(float[])typeof(RailChaos).GetField("birdStun",BindingFlags.NonPublic|BindingFlags.Instance).GetValue(g.chaos);
         for(int i=0;i<stun.Length;i++)stun[i]=999;
+    }
+    /// <summary>Passenger stock is built to its platform: walkable roof at the collision top, body as long as the platform.</summary>
+    static bool RollingStockFits(RailGame g,out string misfit)
+    {
+        misfit="";
+        foreach(var p in g.world.platforms)
+        {
+            if(!p.root || !(p.root.name.StartsWith("Motorový vůz") || p.root.name.StartsWith("Vůz")))continue;
+            var roof=p.root.Find("Arched roof").GetComponent<Renderer>().bounds;
+            var body=p.root.Find("Lower body").GetComponent<Renderer>().bounds;
+            float roofTop=roof.max.y-p.root.position.y,length=body.size.x;
+            if(roofTop<p.top-.02f || roofTop>p.top+.08f){misfit=p.root.name+" roof at "+roofTop.ToString("0.000")+" for a collision top "+p.top;return false;}
+            if(Mathf.Abs(length-p.width)>p.width*.01f){misfit=p.root.name+" is "+length.ToString("0.00")+" m long on a "+p.width+" m platform";return false;}
+        }
+        return true;
     }
     static bool TicketsRideTheirRoof(RailGame g)
     {

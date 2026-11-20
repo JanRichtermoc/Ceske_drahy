@@ -30,6 +30,10 @@ namespace CeskeDrahy
 
         public static Transform Tree(RailWorld w,Vector3 at,float height,Material leaves,Material bark,bool poplar=false)
         {
+            // Leaf tint from the crown colour, softened so the photographic leaves keep their own colour.
+            var tint=Color.Lerp(Color.white,leaves.color*1.9f,.35f);tint.a=1;
+            var model=w.TreeModel(at,height,tint,poplar);
+            if(model)return model;
             var t=w.Group(poplar?"Topol":"Strom",at);
             w.Cylinder("Kmen",new Vector3(0,height*.3f,0),Mathf.Max(.22f,height*.045f),height*.6f,bark,t);
             if(poplar)w.Box("Koruna",new Vector3(0,height*.62f,0),new Vector3(height*.2f,height*.78f,height*.2f),leaves,t,PrimitiveType.Sphere);
@@ -59,13 +63,7 @@ namespace CeskeDrahy
             w.Box("Trávník",new Vector3(Mid(w),Ground+.02f,(zFrom+zTo)*.5f),new Vector3(Span(w),.1f,zTo-zFrom),w.Surfaced("Lawn","Grass"));
         }
 
-        static void Lamp(RailWorld w,Vector3 at,bool lit)
-        {
-            var g=w.Group("Lampa",at);
-            w.Cylinder("Pole",new Vector3(0,2,0),.12f,4,w.dark,g);
-            w.Box("Head",new Vector3(0,4.05f,0),new Vector3(.5f,.25f,.5f),lit?w.Glow("Warm lamp","#FFD38A",2.5f):w.cream,g);
-            if(lit)w.Box("Glow",new Vector3(0,4,-.4f),new Vector3(2.6f,2.6f,1),w.SoftSprite("Lamp glow",new Color(1,.78f,.42f,.35f),false),g,PrimitiveType.Quad);
-        }
+        static void Lamp(RailWorld w,Vector3 at,bool lit)=>w.StreetLight(at,lit);
 
         static void Park(RailWorld w)
         {
@@ -96,7 +94,7 @@ namespace CeskeDrahy
             w.Box("Roof slab",new Vector3(0,8.2f,-.5f),new Vector3(47,.5f,18),white,hall);
             w.Sign("VÝSTAVIŠTĚ FLORA",new Vector3(0,9.6f,-8.4f),.18f,hall,new Color(.2f,.33f,.25f));
             var palm=w.Group("Palmový skleník",new Vector3(130,Ground,34));
-            var pane=w.Mat("Greenhouse glass","#BFE0DF",.15f,.92f);
+            var pane=w.Painted("Greenhouse glass","MetalPlate","#A9CFC9",.25f,.6f,.1f);
             w.Box("Base",new Vector3(0,1.4f,0),new Vector3(22,2.8f,12),white,palm);
             var vault=w.Cylinder("Glass vault",new Vector3(0,2.8f,0),11,20,pane,palm);vault.localRotation=Quaternion.Euler(0,0,90);
             for(float i=-9;i<=9;i+=3)

@@ -58,6 +58,30 @@ namespace CeskeDrahy
             }
         }
 
+        /// <summary>Static props (trees, lamps): like characters, with an optional colour tint per instance group.</summary>
+        public static void DressProp(GameObject model, string folder, Color tint)
+        {
+            foreach (var renderer in model.GetComponentsInChildren<Renderer>(true))
+            {
+                var materials = renderer.sharedMaterials;
+                for (int i = 0; i < materials.Length; i++)
+                {
+                    string raw = materials[i] ? materials[i].name.Replace(" (Instance)", "") : renderer.name;
+                    string part = raw.Contains("_") ? raw.Substring(raw.IndexOf('_') + 1) : raw;
+                    string key = folder + part + "|" + ColorUtility.ToHtmlStringRGB(tint);
+                    if (!cache.TryGetValue(key, out var material) || !material)
+                    {
+                        material = new Material(Character(folder, part, 1)) { name = "Prop " + part };
+                        material.color = material.color * tint;
+                        material.SetFloat("_Macro", .3f);
+                        cache[key] = material;
+                    }
+                    materials[i] = material;
+                }
+                renderer.sharedMaterials = materials;
+            }
+        }
+
         static Material Character(string folder, string part, float brightness)
         {
             string key = folder + part + brightness;

@@ -109,6 +109,16 @@ namespace CeskeDrahy
             material.EnableKeyword("_TRIPLANAR_TOP");
             return material;
         }
+        /// <summary>Printed pickup (ticket, medkit…): a Resources/Textures/Pickups image on every face, with a little glow so it pops.</summary>
+        public Material Printed(string name,string texture,float glow=.15f,float smooth=.35f)
+        {
+            if(mats.TryGetValue(name,out var existing))return existing;
+            var material=Mat(name,"#FFFFFF",0,smooth);
+            material.mainTexture=Resources.Load<Texture2D>("Textures/Pickups/"+texture);
+            material.SetFloat("_Detail",0);material.SetFloat("_Macro",0);
+            material.SetTexture("_EmissionMap",material.mainTexture);material.SetFloat("_EmissionStrength",glow);
+            return material;
+        }
         /// <summary>Flat paint over a set's relief (normal map only): containers, tanks, rolling stock.</summary>
         public Material Painted(string name,string reliefKey,string hex,float bump=.7f,float smooth=.4f,float metal=.2f)
         {
@@ -256,8 +266,7 @@ namespace CeskeDrahy
                 for(float x=p.x-p.width/2+2;x<p.x+p.width/2-1;x+=2.5f)
                 {
                     // Tickets ride their roof, so they stay above a moving wagon.
-                    var t=Box("Jízdenka",new Vector3(x-p.x,p.top+1.25f,0),new Vector3(.45f,.3f,.07f),gold,p.root);
-                    Box("Ticket stripe",new Vector3(0,0,-.045f),new Vector3(.29f,.055f,.015f),cream,t);
+                    var t=Box("Jízdenka",new Vector3(x-p.x,p.top+1.25f,0),new Vector3(.52f,.33f,.025f),Printed("Ticket","Ticket",.3f),p.root);
                     tickets.Add(t);ticketOrigins.Add(new Vector2(x-p.x,p.top+1.25f));
                 }
             }
@@ -336,6 +345,12 @@ namespace CeskeDrahy
             // Ambient and default reflections come from this route's sky, so metal and glass reflect it.
             RenderSettings.defaultReflectionMode=DefaultReflectionMode.Skybox;
             DynamicGI.UpdateEnvironment();
+            // Sky-only reflection probe, rendered once: glass, metal and water reflect this route's sky.
+            var probe=Group("Sky reflection",new Vector3(Length*.5f-10,20,20)).gameObject.AddComponent<ReflectionProbe>();
+            probe.mode=ReflectionProbeMode.Realtime;probe.refreshMode=ReflectionProbeRefreshMode.ViaScripting;
+            probe.timeSlicingMode=ReflectionProbeTimeSlicingMode.NoTimeSlicing;probe.resolution=128;probe.cullingMask=0;
+            probe.clearFlags=ReflectionProbeClearFlags.Skybox;probe.size=new Vector3(Length+100,140,220);probe.hdr=true;
+            probe.RenderProbe();
             Shader.SetGlobalFloat("_RailNight",preset.night);
             Shader.SetGlobalVector("_RailRim",new Vector4(preset.fill.r,preset.fill.g,preset.fill.b,preset.rim));
             Shader.SetGlobalVector("_RailSkyHorizon",preset.horizon);
@@ -476,9 +491,7 @@ namespace CeskeDrahy
             if(x>0){Box("Checkpoint lamp",new Vector3(-width/2+1,top+1.2f,1),new Vector3(.15f,2.4f,.15f),gold,g);}
             Prop("bench",new Vector3(-width*.28f,top,1.05f),180,g);
             if(width>11)Prop("bench",new Vector3(width*.12f,top,1.05f),180,g);
-            var lamp=Prop("lamp",new Vector3(width*.36f,top,1.15f),90,g,.9f);
-            if(lamp && (Level.Sky==Sky.Evening||Level.Sky==Sky.Night||Level.Sky==Sky.Dusk))
-                Box("Lamp glow",new Vector3(width*.36f-.35f,top+3.55f,.7f),new Vector3(2.4f,2.4f,1),SoftSprite("Platform lamp glow",new Color(1,.8f,.5f,.3f),false),g,PrimitiveType.Quad);
+            StreetLight(new Vector3(width*.36f,top,1.15f),Level.Sky==Sky.Evening||Level.Sky==Sky.Night||Level.Sky==Sky.Dusk,g);
             if(checkpoint)
             {
                 // Light signal: shows "Stůj" until the checkpoint is reached, then "Volno".
@@ -495,59 +508,67 @@ namespace CeskeDrahy
                 green.gameObject.SetActive(false);
             }
         }
+        /// <summary>
+        /// Passenger stock built to the exact roof length: variant 1 is a blue ČD coach on two bogies, the others the
+        /// red and cream ČD 810 railbus on two single axles. The walkable roof is at top; windows come from the facade
+        /// shader on the window band, so they stay crisp and light up after dark.
+        /// </summary>
         void Train(float x,float width,float top,int variant,float moving=0)
         {
-            var g=Group("Vagon "+variant,new Vector3(x,0,0));
-            if(variant!=1 && ImportedTrain(g,width,top))
+            var g=Group(variant==1?"Vůz Bdt":"Motorový vůz 810",new Vector3(x,0,0));
+            bool coach=variant==1;
+            const float depth=2.3f,wheelRadius=.43f,nominal=3.25f;
+            float half=width/2;
+            // Wheels stand on the ground tracks (rail head at -0.705) or on a raised track; the lower body absorbs
+            // the difference between the roof height and the rails, the window band keeps its size.
+            float railTop=top-nominal<-.5f?-.705f:top-nominal;
+            RaisedTrack(x,width,moving,railTop);
+            float lowerHeight=Mathf.Max(.45f,1.1f+(top-railTop-nominal));
+            float lowerY=top-1.41f-lowerHeight/2,wheelY=railTop+wheelRadius,frameY=wheelY+.2f;
+            var lower=coach?Painted("Coach blue","MetalPlate","#1F5F9E",.2f,.55f,.25f):Painted("Railbus red","MetalPlate","#B5322E",.2f,.55f,.25f);
+            var upper=coach?Painted("Coach blue","MetalPlate","#1F5F9E",.2f,.55f,.25f):Painted("Railbus cream","MetalPlate","#E9DDBF",.2f,.5f,.2f);
+            var band=coach?PaintedWindows("Coach windows","#DDE5EA",new Color(.62f,.66f,.7f),new Color(.16f,.24f,.3f),new Color(1,.9f,.68f),1.45f,.8f,.8f,.84f,.85f,variant)
+                          :PaintedWindows("Railbus windows","#E9DDBF",new Color(.58f,.2f,.17f),new Color(.15f,.22f,.27f),new Color(1,.9f,.68f),1.3f,.8f,.78f,.86f,.85f,variant);
+            var roofGrey=Painted("Rolling stock roof","MetalPlate","#8C9196",.35f,.45f,.4f);
+            var frame=Painted("Underframe","MetalPlate","#24282B",.4f,.35f,.5f);
+            Box("Lower body",new Vector3(0,lowerY,0),new Vector3(width,lowerHeight,depth),lower,g);
+            Box("Window band",new Vector3(0,top-.98f,0),new Vector3(width,.86f,depth),band,g);
+            Box("Cant rail",new Vector3(0,top-.4f,0),new Vector3(width,.3f,depth),upper,g);
+            Roof("Arched roof",new Vector3(0,top-.21f,0),width,depth,roofGrey,g);
+            Box("Roof base",new Vector3(0,top-.245f,0),new Vector3(width,.07f,depth),roofGrey,g);
+            Box("Waist line",new Vector3(0,top-1.43f,-depth/2-.012f),new Vector3(width,.06f,.03f),coach?cream:Mat("Railbus trim","#7E1D1A",.3f,.5f),g);
+            Box("Underframe",new Vector3(0,frameY,0),new Vector3(width-.8f,.24f,depth-.4f),frame,g);
+            // Doors near both ends on the visible side, with a window and steps.
+            foreach(float side in new[]{-1f,1f})
             {
-                RaisedTrack(x,width,moving,top-3.1f);
-                platforms.Add(new Platform{x=x,width=width,top=top,root=g,amplitude=moving,phase=x});
-                return;
+                float dx=side*(half-(coach?.75f:1.1f));
+                float doorBottom=top-1.41f-lowerHeight+.08f,doorTop=top-.62f;
+                Box("Door",new Vector3(dx,(doorBottom+doorTop)/2,-depth/2-.015f),new Vector3(.8f,doorTop-doorBottom,.03f),coach?Mat("Coach door","#174B7E",.3f,.5f):Mat("Railbus door","#9C2A26",.3f,.5f),g);
+                Box("Door window",new Vector3(dx,top-1.05f,-depth/2-.03f),new Vector3(.42f,.62f,.02f),glass,g);
+                Box("Door handle",new Vector3(dx+side*-.28f,doorBottom+.75f,-depth/2-.04f),new Vector3(.03f,.25f,.03f),steel,g);
+                Box("Step",new Vector3(dx,doorBottom-.12f,-depth/2-.12f),new Vector3(.8f,.06f,.25f),frame,g);
+                // Buffers and a coupling at each end.
+                foreach(float z in new[]{-.85f,.85f})
+                {var buffer=Box("Buffer",new Vector3(side*(half+.12f),frameY+.15f,z),new Vector3(.38f,.24f,.38f),steel,g,PrimitiveType.Cylinder);buffer.localRotation=Quaternion.Euler(0,0,90);}
+                foreach(float z in new[]{-.75f,.75f})
+                    Box("Headlight",new Vector3(side*(half+.005f),top-1.41f-lowerHeight*.45f,z),new Vector3(.02f,.18f,.24f),Glow("Headlight","#FFF2C8",1.6f),g);
             }
-            RaisedTrack(x,width,moving,top-2.52f);
-            Material body=variant==2?Mat("Coach red","#A35A49",.3f,.6f):Mat("Coach blue","#2C77A6",.35f,.62f);
-            Box("Body",new Vector3(0,top-1.02f,0),new Vector3(width,1.8f,2.15f),body,g);
-            Box("Roof base",new Vector3(0,top-.24f,0),new Vector3(width+.15f,.1f,2.25f),steel,g);
-            Roof("Arched roof",new Vector3(0,top-.21f,0),width+.15f,2.25f,steel,g);
-            for(float i=-width/2+.4f;i<width/2;i+=1.3f)
-                Box("Roof seam",new Vector3(i,top+.004f,0),new Vector3(.018f,.012f,1.5f),dark,g);
-            Box("Ivory band",new Vector3(0,top-1.25f,-1.09f),new Vector3(width,.25f,.035f),cream,g);
-            Box("Underframe",new Vector3(0,top-2.05f,0),new Vector3(width-.6f,.24f,1.8f),dark,g);
-            for(float i=-width/2+1;i<width/2-.6f;i+=1.4f)
+            // Running gear: two bogies with two axles for the coach, two single axles with springs for the railbus.
+            var wheel=Mat("Wheel steel","#2E3236",.6f,.45f);
+            float[] axles=coach?new[]{-half+1.5f,-half+3.3f,half-3.3f,half-1.5f}:new[]{-width*.3f,width*.3f};
+            foreach(float ax in axles)
             {
-                Box("Window trim",new Vector3(i,top-.65f,-1.09f),new Vector3(1.03f,.7f,.055f),cream,g);
-                Box("Window",new Vector3(i,top-.65f,-1.13f),new Vector3(.9f,.58f,.03f),glass,g);
-                Box("Glass highlight",new Vector3(i-.27f,top-.65f,-1.15f),new Vector3(.035f,.55f,.015f),steel,g);
-                Box("Window divider",new Vector3(i,top-.55f,-1.155f),new Vector3(.9f,.025f,.018f),steel,g);
+                var t=Box("Wheel",new Vector3(ax,wheelY,-depth/2+.15f),new Vector3(wheelRadius*2,.06f,wheelRadius*2),wheel,g,PrimitiveType.Cylinder);t.localRotation=Quaternion.Euler(90,0,0);
+                Box("Axle box",new Vector3(ax,wheelY+.07f,-depth/2+.02f),new Vector3(.32f,.26f,.1f),frame,g);
+                if(!coach)Box("Leaf spring",new Vector3(ax,wheelY+.24f,-depth/2+.05f),new Vector3(1.3f,.1f,.08f),frame,g);
             }
-            foreach(float i in new[]{-width/2+1.5f,width/2-1.5f})
-            {
-                Box("Bogie",new Vector3(i,top-2.25f,0),new Vector3(2,.32f,1.9f),dark,g);
-                foreach(float j in new[]{-.6f,.6f})
-                {var t=Box("Wheel",new Vector3(i+j,top-2.25f,-.95f),new Vector3(.55f,.12f,.55f),dark,g,PrimitiveType.Cylinder);t.localRotation=Quaternion.Euler(90,0,0);}
-            }
-            Box("Door",new Vector3(width/2-.4f,top-1,-1.14f),new Vector3(.55f,1.65f,.055f),navy,g);
-            Box("Door window",new Vector3(width/2-.4f,top-.63f,-1.18f),new Vector3(.34f,.6f,.02f),glass,g);
-            Box("Door handle",new Vector3(width/2-.6f,top-1.15f,-1.2f),new Vector3(.025f,.22f,.035f),steel,g);
-            for(int step=0;step<2;step++)Box("Door step",new Vector3(width/2-.4f,top-1.85f-step*.17f,-1.22f-step*.1f),new Vector3(.7f,.07f,.3f),steel,g);
-            Sign("2",new Vector3(-width/2+.3f,top-.6f,-1.17f),.065f,g);
-            Sign("ČESKÉ DRÁHY",new Vector3(0,top-1.6f,-1.15f),.037f,g);
-            Sign("CZ—ČD   50 54 20-41   160 km/h",new Vector3(-2,top-1.84f,-1.15f),.016f,g);
-            platforms.Add(new Platform{x=x,width=width+.15f,top=top,root=g,amplitude=moving,phase=x});
-        }
-        bool ImportedTrain(Transform parent,float width,float top)
-        {
-            var prefab=Resources.Load<GameObject>("Models/CD810/scene");if(!prefab)return false;
-            var wrapper=Group("ČD 810 / voxellation / Sketchfab CC BY",Vector3.zero,parent);
-            var instance=Object.Instantiate(prefab,wrapper);instance.transform.localPosition=Vector3.zero;
-            var renderers=instance.GetComponentsInChildren<Renderer>();
-            if(renderers.Length==0){Object.Destroy(wrapper.gameObject);return false;}
-            Bounds b=renderers[0].bounds;foreach(var r in renderers)b.Encapsulate(r.bounds);
-            Vector3 center=wrapper.InverseTransformPoint(b.center);
-            wrapper.localScale=new Vector3(width/b.size.x,3.1f/b.size.y,2.5f/b.size.z);
-            instance.transform.localPosition=-center;
-            wrapper.localPosition=new Vector3(0,top-1.55f,0);
-            return true;
+            if(coach)foreach(float bx in new[]{-half+2.4f,half-2.4f})Box("Bogie frame",new Vector3(bx,wheelY+.1f,-depth/2+.1f),new Vector3(2.6f,.28f,.12f),frame,g);
+            else Box("Exhaust",new Vector3(half*.4f,top+.12f,.3f),new Vector3(.18f,.35f,.18f),frame,g,PrimitiveType.Cylinder);
+            // Lettering.
+            float letterY=top-1.41f-lowerHeight*.45f;
+            if(coach){Sign("2",new Vector3(-half+1.4f,top-1.05f,-depth/2-.03f),.06f,g);Sign("ČESKÉ DRÁHY",new Vector3(0,letterY,-depth/2-.02f),.034f,g);}
+            else{Sign("ČD",new Vector3(0,letterY,-depth/2-.02f),.07f,g,new Color(.96f,.92f,.8f));Sign("810 "+(400+(int)Mathf.Abs(x)%200).ToString("000")+"-"+(int)Mathf.Abs(x)%9,new Vector3(-half+1.8f,letterY-.3f,-depth/2-.02f),.02f,g,new Color(.96f,.92f,.8f));}
+            platforms.Add(new Platform{x=x,width=width,top=top,root=g,amplitude=moving,phase=x});
         }
         readonly Dictionary<Transform,RailActor> actors=new Dictionary<Transform,RailActor>();
         /// <summary>The animated character standing at a Person root, or null for the primitive fallback.</summary>
@@ -627,6 +648,7 @@ namespace CeskeDrahy
             for(int i=10;i<Length-20;i+=17)
             {
                 if(i<44)continue;
+                if(TreeModel(new Vector3(i,-.8f,10),6.5f,Color.white,false))continue;
                 Box("Tree trunk",new Vector3(i,1.7f,10),new Vector3(.35f,5,.35f),rust);
                 for(int n=0;n<4;n++)Box("Tree crown",new Vector3(i+Mathf.Sin(n*2)*1.1f,3.4f+n*.45f,10+Mathf.Cos(n*2)*.65f),new Vector3(2.6f,3.2f,2.5f),Leaves("Station leaves","#4E715C"),null,PrimitiveType.Sphere);
             }
@@ -666,7 +688,7 @@ namespace CeskeDrahy
             t.gameObject.AddComponent<MeshFilter>().sharedMesh=pyramid;t.gameObject.AddComponent<MeshRenderer>().sharedMaterial=material;
             return t;
         }
-        public enum WindowStyle { Panel, OldTown, Industrial, Ribbon }
+        public enum WindowStyle { Panel, OldTown, Industrial, Ribbon, Train }
         /// <summary>
         /// Building wall with a procedural window grid drawn by the shader: modules in metres, whole windows centred on
         /// each vertical face, some lit after dark. Crisp at any size and needs no generated textures.
@@ -684,6 +706,17 @@ namespace CeskeDrahy
             material.SetColor("_FacadeFrame",frame);material.SetColor("_FacadeGlass",glass);material.SetColor("_FacadeLitColor",lit);
             return material;
         }
+        /// <summary>Painted metal wall with shader-drawn windows (rolling stock window bands; module height a bit under the band).</summary>
+        public Material PaintedWindows(string name,string hex,Color frame,Color glassColor,Color lit,float bay,float height,float windowWidth,float windowHeight,float litRatio,int seed)
+        {
+            if(mats.TryGetValue(name,out var existing))return existing;
+            var material=Painted(name,"MetalPlate",hex,.2f,.5f,.25f);
+            material.DisableKeyword("_TRIPLANAR");material.EnableKeyword("_FACADE");
+            material.SetVector("_FacadeModule",new Vector4(bay,height,windowWidth,windowHeight));
+            material.SetVector("_FacadeParams",new Vector4(litRatio,(int)WindowStyle.Train,seed,.35f));
+            material.SetColor("_FacadeFrame",frame);material.SetColor("_FacadeGlass",glassColor);material.SetColor("_FacadeLitColor",lit);
+            return material;
+        }
         /// <summary>Instantiates a Sketchfab model from Resources/Models/Props (null when missing).</summary>
         public Transform Prop(string name,Vector3 position,float yaw,Transform parent=null,float scale=1)
         {
@@ -692,6 +725,40 @@ namespace CeskeDrahy
             var t=Object.Instantiate(prefab,parent?parent:root,false).transform;
             t.name=name+" / Sketchfab CC BY";t.localPosition=position;t.localRotation=Quaternion.Euler(0,yaw,0);t.localScale=Vector3.one*scale;
             return t;
+        }
+        /// <summary>A prop prepared by Tools/blender/prop_prep.py (Resources/Models/Props/&lt;name&gt;), dressed in Railway/Surface.</summary>
+        public Transform Model(string name,Vector3 position,float yaw,Vector3 scale,Color tint,Transform parent=null)
+        {
+            string key="Props/"+name;
+            if(!props.TryGetValue(key,out var prefab)){prefab=Resources.Load<GameObject>("Models/Props/"+name+"/"+name);props[key]=prefab;}
+            if(!prefab)return null;
+            // The wrapper carries yaw and size; the FBX keeps its own root rotation (Blender Z-up conversion) inside it.
+            var t=Group(name+" / Sketchfab CC BY",position,parent);
+            t.localRotation=Quaternion.Euler(0,yaw,0);t.localScale=scale;
+            var model=Object.Instantiate(prefab,t,false);
+            RailMaterials.DressProp(model,"Models/Props/"+name+"/Textures/",tint);
+            return t;
+        }
+        /// <summary>Linden model (poplars are the same tree, narrower); far trees cast no shadow.</summary>
+        public Transform TreeModel(Vector3 at,float height,Color tint,bool poplar,Transform parent=null)
+        {
+            float width=poplar?height*.45f:height*Random.Range(.9f,1.15f);
+            var tree=Model("Tree",at,Random.Range(0f,360f),new Vector3(width,height,width),tint,parent);
+            if(tree&&at.z>20)foreach(var r in tree.GetComponentsInChildren<Renderer>())r.shadowCastingMode=ShadowCastingMode.Off;
+            return tree;
+        }
+        /// <summary>Modern platform/street light: grey mast, short arm towards the tracks and a flat LED head, lit after dark.</summary>
+        public Transform StreetLight(Vector3 at,bool lit,Transform parent=null,float height=4.6f)
+        {
+            var g=Group("Osvětlení",at,parent);
+            var metal=Painted("Lamp mast","MetalPlate","#7D858B",.25f,.45f,.5f);
+            Box("Mast",new Vector3(0,height/2,0),new Vector3(.13f,height,.13f),metal,g,PrimitiveType.Cylinder);
+            Box("Base",new Vector3(0,.18f,0),new Vector3(.26f,.36f,.26f),metal,g,PrimitiveType.Cylinder);
+            Box("Arm",new Vector3(0,height-.04f,-.45f),new Vector3(.07f,.07f,.9f),metal,g);
+            Box("LED head",new Vector3(0,height-.06f,-.95f),new Vector3(.26f,.07f,.6f),metal,g);
+            Box("LED lens",new Vector3(0,height-.1f,-.95f),new Vector3(.2f,.012f,.5f),lit?Glow("LED lens","#FFE7B8",3.2f):Mat("LED lens off","#D7DCDE",.1f,.8f),g);
+            if(lit)Box("Lamp glow",new Vector3(0,height-.35f,-1.2f),new Vector3(2.6f,2.6f,1),SoftSprite("Platform lamp glow",new Color(1,.85f,.6f,.32f),false),g,PrimitiveType.Quad);
+            return g;
         }
         /// <summary>Background traffic that loops along x; purely visual.</summary>
         public void AddMover(Transform body,float from,float to,float speed,float phase){if(body)movers.Add(new Mover{body=body,from=from,span=to-from,speed=speed,phase=phase});}
@@ -738,7 +805,7 @@ namespace CeskeDrahy
                 if(vent.Active)vent.Plume.localScale=new Vector3(1,.65f+.35f*Mathf.Sin((phase-1.15f)*3.2f),1);
             }
             foreach(var p in platforms){float v=Mathf.Sin(time*.8f+p.phase)*p.amplitude;p.previous=p.offset;p.delta=v-p.offset;p.offset=v;p.root.position=new Vector3(p.x+v,0,0);}
-            for(int i=0;i<tickets.Count;i++)if(tickets[i].gameObject.activeSelf){tickets[i].localPosition=new Vector3(ticketOrigins[i].x,ticketOrigins[i].y+Mathf.Sin(time*3+i)*.12f,0);tickets[i].rotation=Quaternion.Euler(0,time*90,8);}
+            for(int i=0;i<tickets.Count;i++)if(tickets[i].gameObject.activeSelf){tickets[i].localPosition=new Vector3(ticketOrigins[i].x,ticketOrigins[i].y+Mathf.Sin(time*3+i)*.12f,0);tickets[i].rotation=Quaternion.Euler(0,Mathf.Sin(time*2.4f+i)*35,8);}
             for(int i=0;i<birds.Count;i++)
             {
                 birds[i].position=new Vector3(birdOrigins[i].x+Mathf.Sin(time*.8f+i)*2.8f,birdOrigins[i].y+Mathf.Sin(time*1.7f+i)*1.1f,0);
