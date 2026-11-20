@@ -28,10 +28,14 @@ PROFILES = {
         "arms": {"L": ("SKEL_L_UpperArm", "SKEL_L_Forearm", "SKEL_L_Hand"), "R": ("SKEL_R_UpperArm", "SKEL_R_Forearm", "SKEL_R_Hand")},
         "parts": {"feet": "Shoes", "hair": "Hair", "hand": "Hands", "head": "Head", "lowr": "Jeans", "teef": "Teeth", "uppr": "Body"},
         "cutout": {"Hair"},
+        # Teeth alpha is only padding: keep them opaque.
+        "opaque": {"Teeth"},
         # Helper bones Humanoid playback does not drive: their skin weights move to the bone they belong to.
         "merge": {"RB_L_ThighRoll": "SKEL_L_Thigh", "RB_R_ThighRoll": "SKEL_R_Thigh"},
         # Face bones the Humanoid mapper would grab (jaw, eyes): renamed so the body clips leave the face alone.
         "rename": {"FB_Jaw_000": "FB_Chin_000", "FB_L_Eye_000": "FB_L_Ocular_000", "FB_R_Eye_000": "FB_R_Ocular_000"},
+        # The mod's posed face bones tear the upper lip when baked: relax the vertices the lip bones drive.
+        "smooth": {"groups": "Lip", "threshold": .15, "factor": .5, "iterations": 6},
     },
     # NS conductor (Sketchfab, CC BY) as the ČD ticket inspector; Mixamo rig.
     "revizor": {
@@ -115,6 +119,24 @@ def merge_weights(meshes, merge):
                     if g.group == src.index and g.weight > 0:
                         dst.add([v.index], g.weight, "ADD")
             obj.vertex_groups.remove(src)
+
+
+def smooth_region(meshes, spec):
+    """Laplacian-smooths the vertices weighted (above threshold) to vertex groups whose name contains spec['groups']."""
+    for obj in meshes:
+        groups = {g.index for g in obj.vertex_groups if spec["groups"] in g.name}
+        if not groups:
+            continue
+        picked = {v.index for v in obj.data.vertices if sum(g.weight for g in v.groups if g.group in groups) > spec["threshold"]}
+        bm = bmesh.new()
+        bm.from_mesh(obj.data)
+        bm.verts.ensure_lookup_table()
+        verts = [bm.verts[i] for i in picked]
+        for _ in range(spec["iterations"]):
+            bmesh.ops.smooth_vert(bm, verts=verts, factor=spec["factor"], use_axis_x=True, use_axis_y=True, use_axis_z=True)
+        bm.to_mesh(obj.data)
+        bm.free()
+        print("SMOOTHED", obj.name, len(verts), "vertices")
 
 
 def t_pose(armature, arms):
@@ -236,6 +258,8 @@ def main():
     print("BONES", [b.name for b in armature.data.bones][:40])
     if not profile.get("animal"):
         t_pose(armature, profile["arms"])
+    if profile.get("smooth"):
+        smooth_region(meshes, profile["smooth"])
 
     # Height and ground contact.
     low, high = math.inf, -math.inf
@@ -271,7 +295,7 @@ def main():
                     albedo, normal, orm = image_of(material, "Base Color"), image_of(material, "Normal"), image_of(material, "Roughness")
                     # Parts whose albedo really uses its alpha (lashes, hair cards) render with the cutout shader.
                     file_part = part
-                    if albedo and albedo.channels == 4 and part not in profile.get("cutout", ()):
+                    if albedo and albedo.channels == 4 and part not in profile.get("cutout", ()) and part not in profile.get("opaque", ()):
                         alpha = list(albedo.pixels)[3::4]
                         if alpha and min(alpha) < .5:
                             file_part = part + "Cutout"
