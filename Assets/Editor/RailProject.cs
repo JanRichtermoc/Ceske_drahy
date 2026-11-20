@@ -1,4 +1,7 @@
+using System.IO;
+using System.IO.Compression;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using CeskeDrahy;
@@ -11,9 +14,9 @@ public static class RailProject
         EnsureMaterials();
         var scene=EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);
         new GameObject("České dráhy / game").AddComponent<RailGame>();
-        System.IO.Directory.CreateDirectory("Assets/Scenes");
-        EditorSceneManager.SaveScene(scene,"Assets/Scenes/OlomoucHlavniNadrazi.unity");
-        EditorBuildSettings.scenes=new[]{new EditorBuildSettingsScene("Assets/Scenes/OlomoucHlavniNadrazi.unity",true)};
+        Directory.CreateDirectory("Assets/Scenes");
+        EditorSceneManager.SaveScene(scene,Scene);
+        EditorBuildSettings.scenes=new[]{new EditorBuildSettingsScene(Scene,true)};
         ConfigurePlayer();
         var so=new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/ProjectSettings.asset")[0]);
         // Input System only (1): keyboard + gamepad through RailInput; the legacy Input Manager is deprecated.
@@ -21,13 +24,22 @@ public static class RailProject
         // Texture import settings come from RailAssetRules (AssetPostprocessor).
         AssetDatabase.SaveAssets();Debug.Log("RAILWAY_SCENE_READY");
     }
+    public const string Version="1.1.0";
+    const string Scene="Assets/Scenes/OlomoucHlavniNadrazi.unity";
     /// <summary>Player settings shared by every platform build.</summary>
     public static void ConfigurePlayer()
     {
         PlayerSettings.productName="SuperCigos";PlayerSettings.companyName="Railway Platformer";
+        PlayerSettings.bundleVersion=Version;PlayerSettings.macOS.buildNumber=Version;
         PlayerSettings.defaultScreenWidth=1280;PlayerSettings.defaultScreenHeight=720;
         PlayerSettings.fullScreenMode=FullScreenMode.Windowed;PlayerSettings.resizableWindow=true;PlayerSettings.allowFullscreenSwitch=true;
         PlayerSettings.runInBackground=true;PlayerSettings.colorSpace=ColorSpace.Linear;
+        PlayerSettings.SplashScreen.show=false;PlayerSettings.SplashScreen.showUnityLogo=false;
+        var icon=AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/Icon/SuperCigos_1024.png");
+        if(icon)PlayerSettings.SetIcons(NamedBuildTarget.Unknown,new[]{icon},IconKind.Any);
+        // IL2CPP cannot cross-compile the Windows player from macOS; Mono runs everywhere and builds universal Mac apps.
+        PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone,ScriptingImplementation.Mono2x);
+        PlayerSettings.meshDeformation=MeshDeformation.GPU;
         // The only scene has fog disabled, so automatic stripping would drop the fog the levels enable at runtime.
         var graphics=new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/GraphicsSettings.asset")[0]);
         graphics.FindProperty("m_FogStripping").intValue=1;
@@ -37,29 +49,95 @@ public static class RailProject
         graphics.ApplyModifiedPropertiesWithoutUndo();
         AssetDatabase.SaveAssets();
     }
+    /// <summary>
+    /// Universal (Intel + Apple silicon) app, ad-hoc signed, zipped with ditto without resource forks:
+    /// Builds/macOS/SuperCigos.app and Builds/SuperCigos-macOS.zip.
+    /// </summary>
     [MenuItem("SuperCigos/Build macOS")]
     public static void BuildMac()
     {
         EnsureMaterials();ConfigurePlayer();
-        var report=BuildPipeline.BuildPlayer(new BuildPlayerOptions{scenes=new[]{"Assets/Scenes/OlomoucHlavniNadrazi.unity"},locationPathName="Builds/SuperCigos.app",target=BuildTarget.StandaloneOSX,options=BuildOptions.None});
-        if(report.summary.result!=UnityEditor.Build.Reporting.BuildResult.Succeeded)throw new System.Exception("Build failed: "+report.summary.result);
-        Debug.Log("RAILWAY_BUILD_OK "+report.summary.totalSize);
+        UnityEditor.OSXStandalone.UserBuildSettings.architecture=OSArchitecture.x64ARM64;
+        const string folder="Builds/macOS",app=folder+"/SuperCigos.app",zip="Builds/SuperCigos-macOS.zip";
+        if(Directory.Exists(folder))Directory.Delete(folder,true);
+        Build(app,BuildTarget.StandaloneOSX);
+        foreach(string junk in Directory.GetDirectories(folder,"*DoNotShip*"))Directory.Delete(junk,true);
+        foreach(string junk in Directory.GetDirectories(folder,"*DontShip*"))Directory.Delete(junk,true);
+        // Every executable and library carries both architectures.
+        int binaries=0;
+        foreach(string file in Directory.GetFiles(app,"*",SearchOption.AllDirectories))
+        {
+            if(!IsMachO(file))continue;
+            string archs=Run("lipo","-archs \""+file+"\"");
+            if(!archs.Contains("x86_64")||!archs.Contains("arm64"))throw new System.Exception("Not universal: "+file+" ("+archs.Trim()+")");
+            binaries++;
+        }
+        Run("xattr","-cr \""+app+"\"");
+        Run("codesign","--force --deep --sign - \""+app+"\"");
+        Run("codesign","--verify --deep --strict \""+app+"\"");
+        if(File.Exists(zip))File.Delete(zip);
+        Run("ditto","-c -k --norsrc --keepParent \""+app+"\" \""+zip+"\"");
+        using(var archive=ZipFile.OpenRead(zip))
+            foreach(var entry in archive.Entries)
+                if(entry.FullName.Contains("__MACOSX")||entry.Name.StartsWith("._"))throw new System.Exception("Resource fork in zip: "+entry.FullName);
+        Debug.Log("RAILWAY_MAC_BUILD_OK universal binaries="+binaries+" zip="+new FileInfo(zip).Length);
     }
+    /// <summary>Windows x64 player in Builds/Windows/SuperCigos and Builds/SuperCigos-Windows.zip (the folder inside the zip).</summary>
     [MenuItem("SuperCigos/Build Windows")]
     public static void BuildWindows()
     {
         EnsureMaterials();ConfigurePlayer();
-        // IL2CPP cannot cross-compile Windows players from macOS; Mono runs everywhere.
-        PlayerSettings.SetScriptingBackend(UnityEditor.Build.NamedBuildTarget.Standalone,ScriptingImplementation.Mono2x);
-        const string folder="Builds/Windows/SuperCigos";
-        if(System.IO.Directory.Exists(folder))System.IO.Directory.Delete(folder,true);
-        var report=BuildPipeline.BuildPlayer(new BuildPlayerOptions{scenes=new[]{"Assets/Scenes/OlomoucHlavniNadrazi.unity"},locationPathName=folder+"/SuperCigos.exe",target=BuildTarget.StandaloneWindows64,options=BuildOptions.None});
+        const string folder="Builds/Windows/SuperCigos",exe=folder+"/SuperCigos.exe",zip="Builds/SuperCigos-Windows.zip";
+        if(Directory.Exists(folder))Directory.Delete(folder,true);
+        Build(exe,BuildTarget.StandaloneWindows64);
+        foreach(string junk in Directory.GetDirectories(folder,"*DontShip*"))Directory.Delete(junk,true);
+        foreach(string junk in Directory.GetDirectories(folder,"*DoNotShip*"))Directory.Delete(junk,true);
+        // PE header: "MZ", then "PE\0\0" at e_lfanew followed by the machine type 0x8664 (x86-64).
+        var bytes=File.ReadAllBytes(exe);int pe=System.BitConverter.ToInt32(bytes,0x3C);
+        if(bytes[0]!='M'||bytes[1]!='Z'||bytes[pe]!='P'||bytes[pe+1]!='E'||System.BitConverter.ToUInt16(bytes,pe+4)!=0x8664)throw new System.Exception("SuperCigos.exe is not an x86-64 PE");
+        if(File.Exists(zip))File.Delete(zip);
+        ZipFile.CreateFromDirectory(folder,zip,System.IO.Compression.CompressionLevel.Optimal,true);
+        Debug.Log("RAILWAY_WINDOWS_BUILD_OK zip="+new FileInfo(zip).Length);
+    }
+    /// <summary>Both platforms plus Builds/SHA256SUMS.txt for the release page.</summary>
+    [MenuItem("SuperCigos/Build release")]
+    public static void BuildRelease()
+    {
+        BuildMac();BuildWindows();
+        var sums=new System.Text.StringBuilder();
+        foreach(string zip in new[]{"Builds/SuperCigos-macOS.zip","Builds/SuperCigos-Windows.zip"})
+            using(var sha=System.Security.Cryptography.SHA256.Create())using(var stream=File.OpenRead(zip))
+                sums.Append(System.BitConverter.ToString(sha.ComputeHash(stream)).Replace("-","").ToLowerInvariant()).Append("  ").Append(Path.GetFileName(zip)).Append('\n');
+        File.WriteAllText("Builds/SHA256SUMS.txt",sums.ToString());
+        Debug.Log("RAILWAY_RELEASE_OK "+Version+"\n"+sums);
+    }
+    static void Build(string path,BuildTarget target)
+    {
+        var report=BuildPipeline.BuildPlayer(new BuildPlayerOptions{scenes=new[]{Scene},locationPathName=path,target=target,options=BuildOptions.CompressWithLz4HC});
+        foreach(var step in report.steps)foreach(var message in step.messages)
+            if(message.type==LogType.Warning||message.type==LogType.Error)Debug.Log("RAILWAY_BUILD_MESSAGE "+message.type+": "+message.content);
         if(report.summary.result!=UnityEditor.Build.Reporting.BuildResult.Succeeded)throw new System.Exception("Build failed: "+report.summary.result);
-        foreach(string junk in System.IO.Directory.GetDirectories(folder,"*DontShip*"))System.IO.Directory.Delete(junk,true);
-        const string zip="Builds/SuperCigos-Windows.zip";
-        if(System.IO.File.Exists(zip))System.IO.File.Delete(zip);
-        System.IO.Compression.ZipFile.CreateFromDirectory(folder,zip,System.IO.Compression.CompressionLevel.Optimal,true);
-        Debug.Log("RAILWAY_WINDOWS_BUILD_OK "+report.summary.totalSize+" warnings="+report.summary.totalWarnings);
+        Debug.Log("RAILWAY_BUILD "+target+" size="+report.summary.totalSize+" warnings="+report.summary.totalWarnings);
+    }
+    static bool IsMachO(string file)
+    {
+        using(var stream=File.OpenRead(file))
+        {
+            if(stream.Length<4)return false;
+            var magic=new byte[4];stream.Read(magic,0,4);uint value=System.BitConverter.ToUInt32(magic,0);
+            return value==0xBEBAFECA||value==0xFEEDFACF||value==0xCFFAEDFE||value==0xCAFEBABE;
+        }
+    }
+    static string Run(string file,string arguments)
+    {
+        var info=new System.Diagnostics.ProcessStartInfo(file,arguments){RedirectStandardOutput=true,RedirectStandardError=true,UseShellExecute=false};
+        using(var process=System.Diagnostics.Process.Start(info))
+        {
+            string output=process.StandardOutput.ReadToEnd()+process.StandardError.ReadToEnd();
+            process.WaitForExit();
+            if(process.ExitCode!=0)throw new System.Exception(file+" "+arguments+" failed: "+output);
+            return output;
+        }
     }
     public static void EnsureMaterials()
     {
