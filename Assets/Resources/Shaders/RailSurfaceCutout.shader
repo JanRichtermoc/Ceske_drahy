@@ -20,6 +20,7 @@ Shader "Railway/SurfaceCutout"
         _Macro ("Macro variation", Range(0,1)) = .3
         _RimMask ("Rim", Range(0,1)) = 1
         _SpecAA ("Specular anti-aliasing", Float) = 1
+        _Sway ("Wind sway (leaf cards)", Float) = 0
     }
     SubShader
     {

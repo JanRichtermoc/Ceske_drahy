@@ -167,6 +167,9 @@ public static class RailSmokeTests
             float roofTop=roof.max.y-p.root.position.y,length=body.size.x;
             if(roofTop<p.top-.02f || roofTop>p.top+.08f){misfit=p.root.name+" roof at "+roofTop.ToString("0.000")+" for a collision top "+p.top;return false;}
             if(Mathf.Abs(length-p.width)>p.width*.01f){misfit=p.root.name+" is "+length.ToString("0.00")+" m long on a "+p.width+" m platform";return false;}
+            // The running gear hangs under the body (a roof too low for the ground rails would push it inside).
+            var frame=p.root.Find("Underframe").GetComponent<Renderer>().bounds;
+            if(frame.max.y>body.min.y+.03f){misfit=p.root.name+" underframe reaches into the body (roof "+p.top+" m too low for the rails)";return false;}
         }
         return true;
     }

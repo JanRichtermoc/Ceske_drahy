@@ -12,7 +12,7 @@
 sampler2D _MainTex, _BumpMap, _ORMMap, _EmissionMap, _TopTex, _TopBump, _TopORM;
 fixed4 _Color, _EmissionColor, _TopColor;
 half _BumpScale, _Metallic, _Glossiness, _Detail, _EmissionStrength, _TriScale, _TopScale, _TopBumpScale;
-half _UseORM, _UseTopORM, _OcclusionStrength, _SmoothScale, _Macro, _RimMask, _SpecAA, _ColorBoost;
+half _UseORM, _UseTopORM, _OcclusionStrength, _SmoothScale, _Macro, _RimMask, _SpecAA, _ColorBoost, _Sway;
 // Facade: x,y module size (m); z,w window size as a fraction of the module.
 float4 _FacadeModule;
 // x lit ratio, y style (0 panel, 1 old town, 2 industrial, 3 ribbon), z seed, w margin (m)
@@ -33,6 +33,14 @@ struct Input
 void vert(inout appdata_full v, out Input o)
 {
     UNITY_INITIALIZE_OUTPUT(Input, o);
+    // Wind for leaf cards (_Sway > 0): gusts grow with the height above the model's pivot, like the old foliage shader.
+    if (_Sway > 0)
+    {
+        float3 world = mul(unity_ObjectToWorld, v.vertex).xyz;
+        float gust = sin(_Time.y * 1.6 + world.x * .31 + world.z * .17) + .5 * sin(_Time.y * 3.7 + world.x * .9);
+        float3 offset = float3(gust, 0, gust * .35) * _Sway * saturate((world.y - unity_ObjectToWorld._m13) * .15);
+        v.vertex.xyz += mul((float3x3)unity_WorldToObject, offset);
+    }
     // Offset from the pivot in world units: textures do not swim on moving wagons or stretch on scaled boxes.
     o.local = mul((float3x3)unity_ObjectToWorld, v.vertex.xyz);
 }

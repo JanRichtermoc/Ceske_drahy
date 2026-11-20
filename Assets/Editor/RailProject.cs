@@ -133,8 +133,11 @@ public static class RailProject
         var info=new System.Diagnostics.ProcessStartInfo(file,arguments){RedirectStandardOutput=true,RedirectStandardError=true,UseShellExecute=false};
         using(var process=System.Diagnostics.Process.Start(info))
         {
-            string output=process.StandardOutput.ReadToEnd()+process.StandardError.ReadToEnd();
+            // Drain stderr in the background: reading both pipes one after the other can deadlock on a full buffer.
+            var errors=process.StandardError.ReadToEndAsync();
+            string output=process.StandardOutput.ReadToEnd();
             process.WaitForExit();
+            output+=errors.Result;
             if(process.ExitCode!=0)throw new System.Exception(file+" "+arguments+" failed: "+output);
             return output;
         }

@@ -86,13 +86,15 @@ namespace CeskeDrahy
         void Shadow(Rect r, float radius, float alpha = .35f)
         {
             if (Event.current.type != EventType.Repaint) return;
-            // The texture's blur fades over its 24 px border, so the solid core lines up with the panel; nudged down a little.
+            // The texture's blur fades over its 24 px border, so the solid core lines up with the panel; nudged down a
+            // little. Drawn through a scale matrix so the blur grows with the UI scale like the panels do.
             const float spread = 24;
-            var area = new Rect(r.x - spread, r.y - spread + 4 * k, r.width + spread * 2, r.height + spread * 2);
-            var previous = GUI.color;
+            var area = new Rect(r.x - spread * k, r.y - (spread - 4) * k, r.width + spread * 2 * k, r.height + spread * 2 * k);
+            var previous = GUI.color; var matrix = GUI.matrix;
+            GUIUtility.ScaleAroundPivot(new Vector2(k, k), area.position);
             GUI.color = new Color(1, 1, 1, Mathf.Clamp01(alpha * 1.2f));
-            shadowStyle.Draw(area, false, false, false, false);
-            GUI.color = previous;
+            shadowStyle.Draw(new Rect(area.x, area.y, area.width / k, area.height / k), false, false, false, false);
+            GUI.color = previous; GUI.matrix = matrix;
         }
         void Panel(Rect r, Color c, float radius = 14) { Shadow(r, radius); Fill(r, c, radius); }
         void Label(Rect r, string value, Font font, float size, Color color, TextAnchor anchor = TextAnchor.MiddleLeft, bool shadow = false)

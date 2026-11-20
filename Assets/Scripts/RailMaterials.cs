@@ -58,8 +58,11 @@ namespace CeskeDrahy
             }
         }
 
-        /// <summary>Static props (trees, lamps): like characters, with an optional colour tint per instance group.</summary>
-        public static void DressProp(GameObject model, string folder, Color tint)
+        /// <summary>
+        /// Static props (trees, benches, the tram): like characters. The tint applies to the parts whose name contains
+        /// tintPart (all parts when null); leaf parts also sway in the wind.
+        /// </summary>
+        public static void DressProp(GameObject model, string folder, Color tint, string tintPart = null)
         {
             foreach (var renderer in model.GetComponentsInChildren<Renderer>(true))
             {
@@ -68,12 +71,14 @@ namespace CeskeDrahy
                 {
                     string raw = materials[i] ? materials[i].name.Replace(" (Instance)", "") : renderer.name;
                     string part = raw.Contains("_") ? raw.Substring(raw.IndexOf('_') + 1) : raw;
-                    string key = folder + part + "|" + ColorUtility.ToHtmlStringRGB(tint);
+                    bool tinted = tintPart == null || part.Contains(tintPart);
+                    string key = folder + part + "|" + (tinted ? ColorUtility.ToHtmlStringRGB(tint) : "");
                     if (!cache.TryGetValue(key, out var material) || !material)
                     {
                         material = new Material(Character(folder, part, 1)) { name = "Prop " + part };
-                        material.color = material.color * tint;
+                        if (tinted) material.color = material.color * tint;
                         material.SetFloat("_Macro", .3f);
+                        if (part.StartsWith("Leaves")) material.SetFloat("_Sway", .12f);
                         cache[key] = material;
                     }
                     materials[i] = material;

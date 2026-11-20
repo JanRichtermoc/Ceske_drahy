@@ -724,6 +724,8 @@ namespace CeskeDrahy
         /// <summary>Painted metal wall with shader-drawn windows (rolling stock window bands; module height a bit under the band).</summary>
         public Material PaintedWindows(string name,string hex,Color frame,Color glassColor,Color lit,float bay,float height,float windowWidth,float windowHeight,float litRatio,int seed)
         {
+            // One material per seed, so cars of the same type light different windows after dark.
+            name+=" "+seed;
             if(mats.TryGetValue(name,out var existing))return existing;
             var material=Painted(name,"MetalPlate",hex,.2f,.5f,.25f);
             material.DisableKeyword("_TRIPLANAR");material.EnableKeyword("_FACADE");
@@ -734,7 +736,7 @@ namespace CeskeDrahy
         }
         /// <summary>Instantiates a Sketchfab model from Resources/Models/Props (null when missing).</summary>
         /// <summary>A prop prepared by Tools/blender/prop_prep.py (Resources/Models/Props/&lt;name&gt;), dressed in Railway/Surface.</summary>
-        public Transform Model(string name,Vector3 position,float yaw,Vector3 scale,Color tint,Transform parent=null)
+        public Transform Model(string name,Vector3 position,float yaw,Vector3 scale,Color tint,Transform parent=null,string tintPart=null)
         {
             string key="Props/"+name;
             if(!props.TryGetValue(key,out var prefab)){prefab=Resources.Load<GameObject>("Models/Props/"+name+"/"+name);props[key]=prefab;}
@@ -743,14 +745,16 @@ namespace CeskeDrahy
             var t=Group(name+" / Sketchfab CC BY",position,parent);
             t.localRotation=Quaternion.Euler(0,yaw,0);t.localScale=scale;
             var model=Object.Instantiate(prefab,t,false);
-            RailMaterials.DressProp(model,"Models/Props/"+name+"/Textures/",tint);
+            RailMaterials.DressProp(model,"Models/Props/"+name+"/Textures/",tint,tintPart);
             return t;
         }
         /// <summary>Linden model (poplars are the same tree, narrower); far trees cast no shadow.</summary>
         public Transform TreeModel(Vector3 at,float height,Color tint,bool poplar,Transform parent=null)
         {
-            float width=poplar?height*.45f:height*Random.Range(.9f,1.15f);
-            var tree=Model("Tree",at,Random.Range(0f,360f),new Vector3(width,height,width),tint,parent);
+            // Width and turn come from the position, so every run (and every benchmark) builds the same trees.
+            float hash=Mathf.Abs(Mathf.Sin(at.x*12.9898f+at.z*78.233f)*43758.547f)%1;
+            float width=poplar?height*.45f:height*Mathf.Lerp(.9f,1.15f,hash);
+            var tree=Model("Tree",at,hash*360,new Vector3(width,height,width),tint,parent,"Leaves");
             if(tree&&at.z>20)foreach(var r in tree.GetComponentsInChildren<Renderer>())r.shadowCastingMode=ShadowCastingMode.Off;
             return tree;
         }

@@ -128,7 +128,11 @@ def main():
             with bpy.context.temp_override(object=obj, active_object=obj):
                 bpy.ops.object.modifier_apply(modifier="Decimate")
         for key, ratio in profile["decimate"].items():
-            if any(s.material and s.material.name.startswith(key) for s in obj.material_slots):
+            # The modifier works on the whole object: only decimate objects made of that material alone.
+            matches = [bool(s.material and s.material.name.startswith(key)) for s in obj.material_slots]
+            if any(matches) and not all(matches):
+                print("SKIP_DECIMATE", obj.name, "mixes", key, "with other materials")
+            if matches and all(matches):
                 mod = obj.modifiers.new("Decimate", "DECIMATE")
                 mod.ratio = ratio
                 with bpy.context.temp_override(object=obj, active_object=obj):
