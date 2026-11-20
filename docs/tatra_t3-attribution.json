@@ -3,5 +3,6 @@
   "author": "Randonavt",
   "url": "https://sketchfab.com/3d-models/tatra-t3-reworked-a932f7c3850643fd92dadad7f5771d6c",
   "license": "http://creativecommons.org/licenses/by/4.0/",
-  "uid": "a932f7c3850643fd92dadad7f5771d6c"
+  "uid": "a932f7c3850643fd92dadad7f5771d6c",
+  "modifications": "Decimated from 141k to 27k triangles, materials sharing a texture merged, textures resized to 512 px, scaled to 14.6 m and converted to FBX (Tools/blender/prop_prep.py --profile tatra)."
 }

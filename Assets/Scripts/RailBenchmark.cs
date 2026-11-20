@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace CeskeDrahy
@@ -14,6 +15,17 @@ namespace CeskeDrahy
     {
         readonly List<float> timings=new List<float>();
         int frames;string output;RailGame game;bool tour,configured;
+        // Render counters (available in release players): sampled with every timed frame, reported as medians.
+        static readonly string[] counterNames={"SetPass Calls Count","Draw Calls Count","Triangles Count","Shadow Casters Count"};
+        readonly ProfilerRecorder[] counters=new ProfilerRecorder[counterNames.Length];
+        readonly List<long>[] counterSamples={new List<long>(),new List<long>(),new List<long>(),new List<long>()};
+        void OnEnable(){for(int i=0;i<counters.Length;i++)counters[i]=ProfilerRecorder.StartNew(ProfilerCategory.Render,counterNames[i]);}
+        void OnDisable(){foreach(var counter in counters)counter.Dispose();}
+        void Sample(List<float> into)
+        {
+            into.Add(Time.unscaledDeltaTime*1000);
+            for(int i=0;i<counters.Length;i++)if(counters[i].Valid)counterSamples[i].Add(counters[i].LastValue);
+        }
         /// <summary>Starts a tour from code (Play Mode in the Editor), without command-line arguments.</summary>
         public static RailBenchmark StartTour(RailGame game,string folder)
         {
@@ -50,7 +62,7 @@ namespace CeskeDrahy
         {
             if(tour)return;
             frames++;
-            if(frames>120)timings.Add(Time.unscaledDeltaTime*1000);
+            if(frames>120)Sample(timings);
             if(frames==240)ScreenCapture.CaptureScreenshot(Path.Combine(output,"standalone.png"));
             if(frames<480)return;
             var result=Measure(timings);result.state=game.Snapshot();
@@ -67,6 +79,7 @@ namespace CeskeDrahy
                 var platforms=game.world.platforms;
                 int[] spots={0,platforms.Count/2,platforms.Count-1};
                 var routeTimings=new List<float>();
+                foreach(var list in counterSamples)list.Clear();
                 for(int s=0;s<spots.Length;s++)
                 {
                     var platform=platforms[spots[s]];
@@ -74,7 +87,7 @@ namespace CeskeDrahy
                     {
                         game.InputOverride=0;game.invulnerability=999;
                         game.position=new Vector2(platform.x+platform.offset,platform.top);game.velocity=Vector2.zero;
-                        if(f>20)routeTimings.Add(Time.unscaledDeltaTime*1000);
+                        if(f>20)Sample(routeTimings);
                         yield return null;
                     }
                     ScreenCapture.CaptureScreenshot(Path.Combine(output,$"L{level+1:00}_{(char)('a'+s)}.png"));
@@ -91,11 +104,14 @@ namespace CeskeDrahy
         Result Measure(List<float> samples)
         {
             samples.Sort();float total=0;foreach(var time in samples)total+=time;
+            long Median(int counter){var list=counterSamples[counter];if(list.Count==0)return -1;list.Sort();return list[list.Count/2];}
             return new Result{device=SystemInfo.processorType,gpu=SystemInfo.graphicsDeviceName,width=Screen.width,height=Screen.height,
+                vSync=QualitySettings.vSyncCount,quality=QualitySettings.names[QualitySettings.GetQualityLevel()],
                 samples=samples.Count,meanMs=total/Mathf.Max(1,samples.Count),medianMs=samples.Count>0?samples[samples.Count/2]:0,
-                p95Ms=samples.Count>0?samples[(int)(samples.Count*.95f)]:0,maximumMs=samples.Count>0?samples[samples.Count-1]:0};
+                p95Ms=samples.Count>0?samples[(int)(samples.Count*.95f)]:0,maximumMs=samples.Count>0?samples[samples.Count-1]:0,
+                setPassCalls=Median(0),drawCalls=Median(1),triangles=Median(2),shadowCasters=Median(3)};
         }
-        [Serializable] class Result {public string device,gpu,state;public int width,height,samples;public float meanMs,medianMs,p95Ms,maximumMs;}
+        [Serializable] class Result {public string device,gpu,state,quality;public int width,height,samples,vSync;public float meanMs,medianMs,p95Ms,maximumMs;public long setPassCalls,drawCalls,triangles,shadowCasters;}
         [Serializable] class TourReport {public List<Result> routes=new List<Result>();}
     }
 }

@@ -25,8 +25,10 @@ PROFILES = {
     # Leaf cards thinned to 30 % and the kept cards grown 1.5× around their centre, so the crown stays full.
     "tree": {"size": ("z", 1.0), "thin": {"M_Branch": .3}, "grow": {"M_Branch": 1.5}, "decimate": {"M_Bark": .08}, "cutout": {"M_Branch"},
              "names": {"M_Bark": "Bark", "M_Branch": "Leaves"}, "max_texture": 1024},
-    # Modern LED street light (Sketchfab CC BY): height normalised to 1 m.
-    "lamp": {"size": ("z", 1.0), "thin": {}, "decimate": {}, "cutout": set(), "names": {}, "max_texture": 1024},
+    # Wooden park bench (Sketchfab CC BY) at its real size: 0.85 m tall.
+    "bench": {"size": ("z", .85), "thin": {}, "decimate": {}, "cutout": set(), "names": {}, "max_texture": 1024},
+    # Tatra T3 tram (Sketchfab CC BY): 14.6 m long, decimated from 141k triangles; materials sharing a texture merge.
+    "tatra": {"size": ("long", 14.6), "thin": {}, "decimate": {}, "decimate_all": .19, "cutout": set(), "names": {}, "max_texture": 512},
 }
 
 
@@ -120,6 +122,11 @@ def main():
                 bm.faces.ensure_lookup_table()
         bm.to_mesh(obj.data)
         bm.free()
+        if profile.get("decimate_all"):
+            mod = obj.modifiers.new("Decimate", "DECIMATE")
+            mod.ratio = profile["decimate_all"]
+            with bpy.context.temp_override(object=obj, active_object=obj):
+                bpy.ops.object.modifier_apply(modifier="Decimate")
         for key, ratio in profile["decimate"].items():
             if any(s.material and s.material.name.startswith(key) for s in obj.material_slots):
                 mod = obj.modifiers.new("Decimate", "DECIMATE")
@@ -138,7 +145,8 @@ def main():
     low = Vector((min(c.x for c in coords), min(c.y for c in coords), min(c.z for c in coords)))
     high = Vector((max(c.x for c in coords), max(c.y for c in coords), max(c.z for c in coords)))
     axis, size = profile["size"]
-    scale = size / (high - low)["xyz".index(axis)]
+    extent = high - low
+    scale = size / (max(extent.x, extent.y) if axis == "long" else extent["xyz".index(axis)])
     for v in obj.data.vertices:
         v.co = (v.co - Vector(((low.x + high.x) / 2, (low.y + high.y) / 2, low.z))) * scale
     obj.data.update()
@@ -146,12 +154,20 @@ def main():
         poly.use_smooth = True
 
     info = {}
+    # Materials that use the same albedo image become one part (one material, one draw call in the game).
+    by_part = {}
     for slot in obj.material_slots:
         material = slot.material
         if material is None:
             continue
         key = material_key(material, profile["names"])
-        part = profile["names"].get(key, re.sub(r"[^A-Za-z0-9]", "", material.name.title()))
+        albedo = image_of(material, "Base Color")
+        stem = os.path.splitext(os.path.basename(albedo.filepath))[0] if albedo else material.name
+        part = profile["names"].get(key, re.sub(r"[^A-Za-z0-9]", "", stem.title()))
+        if part in by_part:
+            slot.material = by_part[part]
+            continue
+        by_part[part] = material
         if key in profile["cutout"]:
             part += "Cutout"
         for socket, suffix in (("Base Color", "A"), ("Normal", "N")):
@@ -159,6 +175,13 @@ def main():
             if image:
                 path = os.path.join(out, "Textures", part + "_" + suffix + ".png")
                 shutil.copyfile(bpy.path.abspath(image.filepath), path)
+                copy = bpy.data.images.load(path)
+                limit = profile.get("max_texture", 2048)
+                if max(copy.size) > limit:
+                    factor = limit / max(copy.size)
+                    copy.scale(int(copy.size[0] * factor), int(copy.size[1] * factor))
+                    copy.save()
+                bpy.data.images.remove(copy)
         bsdf = next((n for n in material.node_tree.nodes if n.type == "BSDF_PRINCIPLED"), None)
         if bsdf:
             info[part] = {"color": list(bsdf.inputs["Base Color"].default_value), "metallic": bsdf.inputs["Metallic"].default_value,

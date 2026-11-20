@@ -3,5 +3,6 @@
   "author": "TheMadraver",
   "url": "https://sketchfab.com/3d-models/wooden-park-bench-e53ad46c604c44e59a98bad27041cb19",
   "license": "http://creativecommons.org/licenses/by/4.0/",
-  "uid": "e53ad46c604c44e59a98bad27041cb19"
+  "uid": "e53ad46c604c44e59a98bad27041cb19",
+  "modifications": "Scaled to 0.85 m height, textures resized to 1024 px and converted to FBX (Tools/blender/prop_prep.py --profile bench)."
 }

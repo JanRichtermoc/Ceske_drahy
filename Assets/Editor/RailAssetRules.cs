@@ -2,7 +2,7 @@ using UnityEditor;
 
 /// <summary>
 /// Import rules for the game's textures, so a fresh checkout imports them identically:
-/// Poly Haven sets (Resources/Textures/PH) and model textures keep their 1K/2K size, *_N are normal maps, *_ORM are linear.
+/// Poly Haven sets (Resources/Textures/PH) and model textures import at up to 1K (CJ 2K), *_N are normal maps, *_ORM are linear.
 /// </summary>
 public sealed class RailAssetRules : AssetPostprocessor
 {
@@ -16,7 +16,8 @@ public sealed class RailAssetRules : AssetPostprocessor
         importer.wrapMode = UnityEngine.TextureWrapMode.Repeat;
         importer.filterMode = UnityEngine.FilterMode.Trilinear;
         importer.anisoLevel = 8;
-        importer.maxTextureSize = 2048;
+        // The orthographic view shows about 90 px per metre: 1K is plenty for tiled sets and props; only CJ keeps 2K.
+        importer.maxTextureSize = assetPath.Contains("/Characters/CJ/") ? 2048 : 1024;
         importer.textureCompression = TextureImporterCompression.Compressed;
         if (name.EndsWith("_N"))
         {

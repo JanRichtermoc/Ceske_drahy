@@ -78,6 +78,8 @@ namespace CeskeDrahy
         {
             // The simulation runs at a fixed 120 Hz and is interpolated, so rendering follows the display refresh.
             Application.targetFrameRate=-1;Application.runInBackground=true;QualitySettings.vSyncCount=1;
+            // Characters are imported with four weights per vertex; the Ultra preset would otherwise allow unlimited.
+            QualitySettings.skinWeights=SkinWeights.FourBones;
             LoadLevel(0);
             view=new GameObject("Game Camera").AddComponent<Camera>(); view.tag="MainCamera";
             view.orthographic=true;view.orthographicSize=7.5f;view.nearClipPlane=.3f;view.farClipPlane=160;
@@ -86,7 +88,7 @@ namespace CeskeDrahy
             PlaceCamera(new Vector3(9.9f,4.3f,0));
             view.gameObject.AddComponent<AudioListener>();
             post=view.gameObject.AddComponent<RailPost>();post.Apply(world.Grading);
-            muted=PlayerPrefs.GetInt("muted",0)==1;lowQuality=PlayerPrefs.GetInt("lowQuality",0)==1;reducedMotion=PlayerPrefs.GetInt("reducedMotion",0)==1;ApplyQuality();
+            muted=PlayerPrefs.GetInt("muted",0)==1;lowQuality=PlayerPrefs.GetInt("lowQuality",LowEndGpu?1:0)==1;reducedMotion=PlayerPrefs.GetInt("reducedMotion",0)==1;ApplyQuality();
             hitShoutVolume=Mathf.Clamp01(PlayerPrefs.GetFloat("hitShoutVolume",.94f));
             audioMix=gameObject.AddComponent<RailAudio>();
             audioMix.Initialize(this);
@@ -138,6 +140,8 @@ namespace CeskeDrahy
             Launch(jumping?StompJump:StompBounce,jumpHeld);
             invulnerability=Mathf.Max(invulnerability,.3f);
         }
+        /// <summary>Integrated or small GPUs (under 2 GB) start on the saving preset until the player chooses otherwise.</summary>
+        static bool LowEndGpu=>SystemInfo.graphicsMemorySize>0 && SystemInfo.graphicsMemorySize<2048 && !Application.isEditor;
         public void ApplyQuality(){QualitySettings.shadows=lowQuality?ShadowQuality.Disable:ShadowQuality.All;QualitySettings.antiAliasing=lowQuality?0:4;if(post)post.enabled=!lowQuality;}
         public void SaveSettings(){PlayerPrefs.SetInt("muted",muted?1:0);PlayerPrefs.SetInt("lowQuality",lowQuality?1:0);PlayerPrefs.SetInt("reducedMotion",reducedMotion?1:0);PlayerPrefs.SetFloat("hitShoutVolume",hitShoutVolume);PlayerPrefs.Save();ApplyQuality();}
         public void ToggleFullscreen(){Screen.fullScreenMode=Screen.fullScreen?FullScreenMode.Windowed:FullScreenMode.FullScreenWindow;}

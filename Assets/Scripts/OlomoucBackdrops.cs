@@ -144,7 +144,7 @@ namespace CeskeDrahy
             for(int side=-1;side<=1;side+=2)w.Box("Tram rail",new Vector3(Mid(w),Ground+.09f,z+side*.72f),new Vector3(Span(w),.04f,.08f),w.steel);
             w.Box("Tram wire",new Vector3(Mid(w),Ground+5.6f,z),new Vector3(Span(w),.03f,.03f),w.dark);
             for(float x=-12;x<w.Length;x+=25)w.Cylinder("Tram mast",new Vector3(x,Ground+3,z+2.4f),.18f,6,w.dark);
-            var tram=w.Prop("tatra_t3",new Vector3(0,Ground+.05f,z),90);
+            var tram=w.Model("Tatra",new Vector3(0,Ground+.05f,z),90,Vector3.one,Color.white);
             w.AddMover(tram,-30,w.Length+30,6.5f,40);
         }
         static void Ambulance(RailWorld w,Vector3 at)

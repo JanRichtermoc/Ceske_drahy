@@ -504,8 +504,8 @@ namespace CeskeDrahy
             foreach(float i in new[]{-3.2f,3.2f})Box("Sign post",new Vector3(i,top+1.8f,2),new Vector3(.1f,3.6f,.1f),steel,g);
             platforms.Add(new Platform{x=x,width=width,top=top,root=g});
             if(x>0){Box("Checkpoint lamp",new Vector3(-width/2+1,top+1.2f,1),new Vector3(.15f,2.4f,.15f),gold,g);}
-            Prop("bench",new Vector3(-width*.28f,top,1.05f),180,g);
-            if(width>11)Prop("bench",new Vector3(width*.12f,top,1.05f),180,g);
+            Model("Bench",new Vector3(-width*.28f,top,1.05f),180,Vector3.one,Color.white,g);
+            if(width>11)Model("Bench",new Vector3(width*.12f,top,1.05f),180,Vector3.one,Color.white,g);
             StreetLight(new Vector3(width*.36f,top,1.15f),Level.Sky==Sky.Evening||Level.Sky==Sky.Night||Level.Sky==Sky.Dusk,g);
             if(checkpoint)
             {
@@ -733,14 +733,6 @@ namespace CeskeDrahy
             return material;
         }
         /// <summary>Instantiates a Sketchfab model from Resources/Models/Props (null when missing).</summary>
-        public Transform Prop(string name,Vector3 position,float yaw,Transform parent=null,float scale=1)
-        {
-            if(!props.TryGetValue(name,out var prefab)){prefab=Resources.Load<GameObject>("Models/Props/"+name);props[name]=prefab;}
-            if(!prefab)return null;
-            var t=Object.Instantiate(prefab,parent?parent:root,false).transform;
-            t.name=name+" / Sketchfab CC BY";t.localPosition=position;t.localRotation=Quaternion.Euler(0,yaw,0);t.localScale=Vector3.one*scale;
-            return t;
-        }
         /// <summary>A prop prepared by Tools/blender/prop_prep.py (Resources/Models/Props/&lt;name&gt;), dressed in Railway/Surface.</summary>
         public Transform Model(string name,Vector3 position,float yaw,Vector3 scale,Color tint,Transform parent=null)
         {
