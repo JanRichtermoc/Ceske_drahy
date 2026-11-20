@@ -17,7 +17,8 @@ namespace CeskeDrahy
             Enamel = Hex("#F3F1EA"), Paper = Hex("#F2EBD8"), Ink = Hex("#14273A"), Muted = Hex("#9FB2C2"), Red = Hex("#D9463B"), Green = Hex("#43C072"), Led = Hex("#FFB733");
         Font body, bodyBold, cond, condBold, condBlack;
         GUIStyle text;
-        Texture2D dots;
+        Texture2D dots, shadow;
+        GUIStyle shadowStyle;
         float k, ox, oy, fps, appear;
         bool settings, volumeDirty, mouseMoved;
         Vector2 lastMouse = new Vector2(-1, -1);
@@ -40,11 +41,22 @@ namespace CeskeDrahy
             // Created here, not in a field initializer: GUIStyle needs the engine to be ready.
             text = new GUIStyle { wordWrap = false, richText = false };
             // Dot-matrix mask for the departure board.
-            dots = new Texture2D(4, 4, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Repeat, filterMode = FilterMode.Bilinear, hideFlags = HideFlags.HideAndDontSave };
-            for (int y = 0; y < 4; y++) for (int x = 0; x < 4; x++) dots.SetPixel(x, y, x == 3 || y == 3 ? new Color(0, 0, 0, .55f) : Color.clear);
+            dots = new Texture2D(4, 4, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Repeat, filterMode = FilterMode.Point, hideFlags = HideFlags.HideAndDontSave };
+            for (int y = 0; y < 4; y++) for (int x = 0; x < 4; x++) dots.SetPixel(x, y, x == 3 || y == 3 ? new Color(0, 0, 0, .22f) : Color.clear);
             dots.Apply();
+            // Drop shadow: a blurred rounded square, drawn 9-sliced so any panel size gets one smooth shadow.
+            shadow = new Texture2D(64, 64, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear, hideFlags = HideFlags.HideAndDontSave };
+            for (int y = 0; y < 64; y++) for (int x = 0; x < 64; x++)
+            {
+                float dx = Mathf.Max(Mathf.Abs(x + .5f - 32) - 8, 0), dy = Mathf.Max(Mathf.Abs(y + .5f - 32) - 8, 0);
+                float d = Mathf.Sqrt(dx * dx + dy * dy);
+                shadow.SetPixel(x, y, new Color(0, 0, 0, Mathf.Exp(-d * d / 98f) * (1 - Mathf.SmoothStep(18, 24, d))));
+            }
+            shadow.Apply();
+            shadowStyle = new GUIStyle { border = new RectOffset(24, 24, 24, 24) };
+            shadowStyle.normal.background = shadow;
         }
-        void OnDestroy() { if (dots) Destroy(dots); }
+        void OnDestroy() { if (dots) Destroy(dots); if (shadow) Destroy(shadow); }
         void Update()
         {
             fps = Mathf.Lerp(fps, 1 / Mathf.Max(Time.unscaledDeltaTime, .001f), .05f);
@@ -73,11 +85,14 @@ namespace CeskeDrahy
         }
         void Shadow(Rect r, float radius, float alpha = .35f)
         {
-            for (int i = 3; i >= 1; i--)
-            {
-                float g = i * 5 * k;
-                Fill(new Rect(r.x - g * .5f, r.y - g * .2f, r.width + g, r.height + g * 1.1f), new Color(0, 0, 0, alpha / (i * 2.2f)), radius + i * 5);
-            }
+            if (Event.current.type != EventType.Repaint) return;
+            // The texture's blur fades over its 24 px border, so the solid core lines up with the panel; nudged down a little.
+            const float spread = 24;
+            var area = new Rect(r.x - spread, r.y - spread + 4 * k, r.width + spread * 2, r.height + spread * 2);
+            var previous = GUI.color;
+            GUI.color = new Color(1, 1, 1, Mathf.Clamp01(alpha * 1.2f));
+            shadowStyle.Draw(area, false, false, false, false);
+            GUI.color = previous;
         }
         void Panel(Rect r, Color c, float radius = 14) { Shadow(r, radius); Fill(r, c, radius); }
         void Label(Rect r, string value, Font font, float size, Color color, TextAnchor anchor = TextAnchor.MiddleLeft, bool shadow = false)
@@ -85,10 +100,10 @@ namespace CeskeDrahy
             text.font = font; text.fontSize = Mathf.Max(1, Mathf.RoundToInt(size * k)); text.alignment = anchor;
             if (shadow)
             {
-                text.normal.textColor = new Color(0, 0, 0, .45f * color.a);
+                text.normal.textColor = Gui(new Color(0, 0, 0, .45f * color.a));
                 GUI.Label(new Rect(r.x + 2 * k, r.y + 2 * k, r.width, r.height), value, text);
             }
-            text.normal.textColor = color;
+            text.normal.textColor = Gui(color);
             GUI.Label(r, value, text);
         }
         float Width(string value, Font font, float size)
@@ -142,8 +157,9 @@ namespace CeskeDrahy
                 case RailGame.Mode.Menu: Menu(); break;
                 case RailGame.Mode.Loading: Loading(); break;
                 default:
-                    if (game.mode == RailGame.Mode.Playing) { HitFlash(); Pops(); }
+                    if (game.mode == RailGame.Mode.Playing) HitFlash();
                     Hud();
+                    if (game.mode == RailGame.Mode.Playing) Pops();
                     if (game.mode == RailGame.Mode.Paused) Pause();
                     if (game.mode == RailGame.Mode.Won) Ticket();
                     if (game.mode == RailGame.Mode.Lost) Missed();
@@ -190,7 +206,7 @@ namespace CeskeDrahy
             if (Button(R(64, 716, 272, 56), "NASTAVENÍ", false)) settings = true;
             if (Button(R(352, 716, 272, 56), "KONEC HRY", false)) game.Quit();
             Board();
-            BottomHints("ŠIPKY  VÝBĚR TRATI", "ENTER  HRÁT", "A D  POHYB", "MEZERNÍK  SKOK A DVOJSKOK", "SHIFT  ÚHYB", "ESC  PAUZA");
+            BottomHints("ŠIPKY  VÝBĚR TRATI", "ENTER  HRÁT", "A D  POHYB", "MEZERNÍK  SKOK A DVOJSKOK", "S  RYCHLÝ PÁD", "SHIFT  ÚHYB", "ESC  PAUZA");
         }
         void TopBar()
         {
@@ -236,6 +252,14 @@ namespace CeskeDrahy
             string[] head = { "REKORD", "VLAK", "SMĚR", "OBTÍŽNOST", "TRAŤ" };
             for (int c = 0; c < head.Length; c++) Label(R(col[c], 182, 200, 24), head[c], condBold, 16, A(Enamel, .45f));
             Fill(R(796, 208, 738, 2), A(Hex("#2B4A66"), .9f));
+            if (Event.current.type == EventType.Repaint)
+            {
+                // Whole-pixel cells (a multiple of the 4 px texture) so the LED raster never blurs or beats.
+                var screen = R(796, 216, 738, 560);
+                screen = new Rect(Mathf.Round(screen.x), Mathf.Round(screen.y), Mathf.Round(screen.width), Mathf.Round(screen.height));
+                float cell = 4 * Mathf.Max(1, Mathf.Round(k));
+                GUI.DrawTextureWithTexCoords(screen, dots, new Rect(0, 0, screen.width / cell, screen.height / cell));
+            }
             for (int i = 0; i < RailLevel.All.Length; i++)
             {
                 var level = RailLevel.All[i];
@@ -255,11 +279,6 @@ namespace CeskeDrahy
                 for (int p = 0; p < 5; p++) Fill(new Rect(pips.x + p * (size + gap), pips.y, size, size), p < level.Difficulty ? (selected ? Ink : Led) : A(selected ? Ink : Led, .2f), 2);
                 Label(R(col[4], y, 50, 52), (i + 1).ToString(), condBlack, 28, ink, TextAnchor.MiddleCenter);
                 if (GUI.Button(row, GUIContent.none, GUIStyle.none)) game.StartLevel(i, true);
-            }
-            if (Event.current.type == EventType.Repaint)
-            {
-                var screen = R(796, 216, 738, 560);
-                GUI.DrawTextureWithTexCoords(screen, dots, new Rect(0, 0, screen.width / (4 * k), screen.height / (4 * k)));
             }
             Label(R(806, 762, 720, 26), "Všechny tratě jsou otevřené. Rekordy se ukládají na tomto počítači.", body, 15, A(Enamel, .45f));
         }
@@ -337,13 +356,15 @@ namespace CeskeDrahy
             Notice();
             Wind();
             Route();
-            if (game.LevelIndex == 0 && game.position.x < 9 && game.mode == RailGame.Mode.Playing)
+            if (game.LevelIndex == 0 && game.position.x < 24 && game.mode == RailGame.Mode.Playing)
             {
+                bool first = game.position.x < 9;
                 var tip = R(28, 690, 440, 112, X.Left, Y.Bottom);
                 Panel(tip, A(Navy, .94f), 14);
-                Label(R(50, 702, 400, 28, X.Left, Y.Bottom), "KUFROVÝ KATAPULT", condBold, 20, Amber);
+                Label(R(50, 702, 400, 28, X.Left, Y.Bottom), first ? "KUFROVÝ KATAPULT" : "RYCHLÝ PÁD A ÚHYB", condBold, 20, Amber);
                 text.wordWrap = true;
-                Label(R(50, 732, 400, 60, X.Left, Y.Bottom), "Šlápni na růžový kufr. Ve vzduchu můžeš skočit ještě jednou.", body, 18, Enamel, TextAnchor.UpperLeft);
+                Label(R(50, 732, 400, 60, X.Left, Y.Bottom), first ? "Šlápni na růžový kufr. Ve vzduchu můžeš skočit ještě jednou."
+                    : "Ve vzduchu drž S nebo šipku dolů a dopadneš dřív. Shift tě protáhne kolem brašny.", body, 18, Enamel, TextAnchor.UpperLeft);
                 text.wordWrap = false;
             }
         }

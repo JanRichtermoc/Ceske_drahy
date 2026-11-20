@@ -54,7 +54,10 @@ namespace CeskeDrahy
             foreach(var mesh in generatedMeshes)Object.Destroy(mesh);
             foreach(var texture in generatedTextures)Object.Destroy(texture);
             Object.Destroy(skybox);
+            if(signMaterial){Font.textureRebuilt-=OnFontRebuilt;Object.Destroy(signMaterial);}
         }
+        /// <summary>The dynamic font atlas can be replaced when it grows (also by the HUD); keep the sign material on it.</summary>
+        void OnFontRebuilt(Font font){if(font==signFont && signMaterial)signMaterial.mainTexture=font.material.mainTexture;}
         public void AttachMesh(string name,Transform parent,Mesh mesh,Material material)
         {
             var visual=Group(name,Vector3.zero,parent);
@@ -214,11 +217,23 @@ namespace CeskeDrahy
             mesh.vertices=vertices;mesh.uv=uv;mesh.triangles=indices.ToArray();mesh.RecalculateNormals();mesh.RecalculateTangents();mesh.RecalculateBounds();
             t.gameObject.AddComponent<MeshFilter>().sharedMesh=mesh;t.gameObject.AddComponent<MeshRenderer>().sharedMaterial=material;generatedMeshes.Add(mesh);return t;
         }
+        Font signFont;
+        Material signMaterial;
+        /// <summary>Lettering in Barlow Condensed Bold on the lit, fogged Railway/WorldText shader.</summary>
         public Transform Sign(string text, Vector3 pos, float size, Transform parent = null, Color? color = null)
         {
+            if (!signMaterial)
+            {
+                signFont = Resources.Load<Font>("Fonts/BarlowCondensed-Bold");
+                signMaterial = new Material(Shader.Find("Railway/WorldText")) { name = "World text", mainTexture = signFont.material.mainTexture };
+                Font.textureRebuilt += OnFontRebuilt;
+            }
             var t = Group(text, pos, parent); var m = t.gameObject.AddComponent<TextMesh>();
-            m.text = text; m.fontSize = 64; m.characterSize = size; m.anchor = TextAnchor.MiddleCenter;
-            m.color = color ?? new Color(.91f,.94f,.9f); m.fontStyle = FontStyle.Bold;
+            // A larger glyph size keeps the atlas sharp; characterSize scales back to the old 64-pixel layout.
+            m.font = signFont; m.text = text; m.fontSize = 96; m.characterSize = size * 64 / 96; m.anchor = TextAnchor.MiddleCenter;
+            m.color = color ?? new Color(.91f,.94f,.9f);
+            var renderer = t.GetComponent<MeshRenderer>(); renderer.sharedMaterial = signMaterial;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; renderer.receiveShadows = false;
             return t;
         }
         public void Build(int levelIndex = 0)
