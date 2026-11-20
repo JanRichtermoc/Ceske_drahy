@@ -24,16 +24,16 @@ Prohlídka tratí (`-rail-tour -rail-uncapped`) na každé trati postaví CJ na 
 
 | Trať | Medián arm64 | 95. percentil arm64 | Medián x86_64 | Draw cally | Trojúhelníky |
 |---|---:|---:|---:|---:|---:|
-| 1 Olomouc hl. n. | 3,99 ms (251 FPS) | 5,29 ms | 4,11 ms | 445 | 237 tis. |
-| 2 Olomouc-Smetanovy sady | 6,99 ms (143 FPS) | 8,12 ms | 6,94 ms | 338 | 429 tis. |
-| 3 Olomouc-Nová Ulice | 4,65 ms (215 FPS) | 5,40 ms | 4,67 ms | 387 | 317 tis. |
-| 4 Olomouc město | 4,03 ms (248 FPS) | 4,65 ms | 4,06 ms | 383 | 231 tis. |
-| 5 Olomouc Hodolany | 4,43 ms (226 FPS) | 4,94 ms | 4,37 ms | 264 | 149 tis. |
-| 6 Olomouc-Hejčín | 6,15 ms (163 FPS) | 6,92 ms | 6,19 ms | 322 | 375 tis. |
-| 7 Olomouc-Řepčín | 4,82 ms (208 FPS) | 5,95 ms | 4,77 ms | 320 | 182 tis. |
-| 8 Olomouc-Nové Sady | 5,06 ms (197 FPS) | 5,60 ms | 4,91 ms | 332 | 267 tis. |
-| 9 Nemilany | 5,90 ms (169 FPS) | 6,89 ms | 5,93 ms | 409 | 718 tis. |
-| 10 Olomouc přednádraží | 4,32 ms (231 FPS) | 4,89 ms | 4,31 ms | 250 | 149 tis. |
+| 1 Olomouc hl. n. | 4,15 ms (241 FPS) | 5,68 ms | 4,06 ms | 428 | 230 tis. |
+| 2 Olomouc-Smetanovy sady | 6,91 ms (145 FPS) | 8,14 ms | 6,93 ms | 334 | 399 tis. |
+| 3 Olomouc-Nová Ulice | 4,59 ms (218 FPS) | 5,26 ms | 4,61 ms | 390 | 316 tis. |
+| 4 Olomouc město | 4,02 ms (249 FPS) | 4,52 ms | 4,07 ms | 382 | 232 tis. |
+| 5 Olomouc Hodolany | 4,39 ms (228 FPS) | 5,07 ms | 4,40 ms | 259 | 149 tis. |
+| 6 Olomouc-Hejčín | 6,18 ms (162 FPS) | 6,88 ms | 6,17 ms | 318 | 375 tis. |
+| 7 Olomouc-Řepčín | 4,87 ms (205 FPS) | 5,89 ms | 4,76 ms | 320 | 182 tis. |
+| 8 Olomouc-Nové Sady | 4,96 ms (202 FPS) | 5,53 ms | 4,99 ms | 336 | 267 tis. |
+| 9 Nemilany | 5,97 ms (168 FPS) | 6,96 ms | 6,02 ms | 404 | 718 tis. |
+| 10 Olomouc přednádraží | 4,30 ms (233 FPS) | 5,04 ms | 4,31 ms | 249 | 149 tis. |
 
 Data jsou v [benchmark-macos-m4-arm64.json](benchmark-macos-m4-arm64.json) a [benchmark-macos-m4-x64-rosetta.json](benchmark-macos-m4-x64-rosetta.json). Ve hře je zapnutá vertikální synchronizace, takže běží na obnovovací frekvenci monitoru. Slabší grafické karty a Windows nebyly měřené. Volba *Grafika · Úsporná* vypíná stíny, MSAA a post-processing; karty s méně než 2 GB paměti začínají na ní automaticky.
 
