@@ -1,7 +1,7 @@
 DENÍK SELHÁNÍ AI A RETROSPEKTIVA
 Projekt: České dráhy – Olomoucký chaos
 
-Záznam vychází z průběhu vývoje hry v Unity. Opravy kódu a testy prováděla AI na základě mého zadání. Moje role spočívala v zadávání požadavků a upřesňování výsledku.
+Záznam vychází z průběhu vývoje hry v Unity do verze 0.3.0. Opravy kódu a testy prováděla AI na základě mého zadání. Moje role spočívala v zadávání požadavků a upřesňování výsledku.
 
 DENÍK SELHÁNÍ AI
 
@@ -45,7 +45,7 @@ Jak jsem to poznal:
 Z popisu výsledku a herních náhledů bylo patrné, že jde o nově vytvořenou podobu postavy. AI výslovně uvedla, že vytvořila vlastní geometrii a animace.
 
 Jak jsem to opravil:
-Tento bod zatím nebyl plně opraven. Ve verzi 0.3.0 zůstal vlastní fanouškovský model. Pro další úpravu bych musel přesně určit konkrétní model a ověřit, že jej mohu použít a sdílet v repozitáři. Tento případ beru jako nesplněnou část zadání, nikoli jako hotovou opravu.
+Do verze 0.3.0 tento bod nebyl plně opraven. V této verzi zůstal vlastní fanouškovský model. Pro další úpravu bych musel přesně určit konkrétní model a ověřit, že jej mohu použít a sdílet v repozitáři. Tento případ beru jako nesplněnou část zadání, nikoli jako hotovou opravu.
 
 KRÁTKÁ INDIVIDUÁLNÍ RETROSPEKTIVA
 
