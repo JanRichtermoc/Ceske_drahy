@@ -8,7 +8,7 @@ using CeskeDrahy;
 
 public static class RailProject
 {
-    [MenuItem("SuperCigos/Prepare game scene")]
+    [MenuItem("SuperCigo/Prepare game scene")]
     public static void Prepare()
     {
         EnsureMaterials();
@@ -29,13 +29,13 @@ public static class RailProject
     /// <summary>Player settings shared by every platform build.</summary>
     public static void ConfigurePlayer()
     {
-        PlayerSettings.productName="SuperCigos";PlayerSettings.companyName="Railway Platformer";
+        PlayerSettings.productName="SuperCigo";PlayerSettings.companyName="Railway Platformer";
         PlayerSettings.bundleVersion=Version;PlayerSettings.macOS.buildNumber=Version;
         PlayerSettings.defaultScreenWidth=1280;PlayerSettings.defaultScreenHeight=720;
         PlayerSettings.fullScreenMode=FullScreenMode.Windowed;PlayerSettings.resizableWindow=true;PlayerSettings.allowFullscreenSwitch=true;
         PlayerSettings.runInBackground=true;PlayerSettings.colorSpace=ColorSpace.Linear;
         PlayerSettings.SplashScreen.show=false;PlayerSettings.SplashScreen.showUnityLogo=false;
-        var icon=AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/Icon/SuperCigos_1024.png");
+        var icon=AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/Icon/SuperCigo_1024.png");
         if(icon)PlayerSettings.SetIcons(NamedBuildTarget.Unknown,new[]{icon},IconKind.Any);
         // IL2CPP cannot cross-compile the Windows player from macOS; Mono runs everywhere and builds universal Mac apps.
         PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone,ScriptingImplementation.Mono2x);
@@ -51,14 +51,14 @@ public static class RailProject
     }
     /// <summary>
     /// Universal (Intel + Apple silicon) app, ad-hoc signed, zipped with ditto without resource forks:
-    /// Builds/macOS/SuperCigos.app and Builds/SuperCigos-macOS.zip.
+    /// Builds/macOS/SuperCigo.app and Builds/SuperCigo-macOS.zip.
     /// </summary>
-    [MenuItem("SuperCigos/Build macOS")]
+    [MenuItem("SuperCigo/Build macOS")]
     public static void BuildMac()
     {
         EnsureMaterials();ConfigurePlayer();
         UnityEditor.OSXStandalone.UserBuildSettings.architecture=OSArchitecture.x64ARM64;
-        const string folder="Builds/macOS",app=folder+"/SuperCigos.app",zip="Builds/SuperCigos-macOS.zip";
+        const string folder="Builds/macOS",app=folder+"/SuperCigo.app",zip="Builds/SuperCigo-macOS.zip";
         if(Directory.Exists(folder))Directory.Delete(folder,true);
         Build(app,BuildTarget.StandaloneOSX);
         foreach(string junk in Directory.GetDirectories(folder,"*DoNotShip*"))Directory.Delete(junk,true);
@@ -82,30 +82,30 @@ public static class RailProject
                 if(entry.FullName.Contains("__MACOSX")||entry.Name.StartsWith("._"))throw new System.Exception("Resource fork in zip: "+entry.FullName);
         Debug.Log("RAILWAY_MAC_BUILD_OK universal binaries="+binaries+" zip="+new FileInfo(zip).Length);
     }
-    /// <summary>Windows x64 player in Builds/Windows/SuperCigos and Builds/SuperCigos-Windows.zip (the folder inside the zip).</summary>
-    [MenuItem("SuperCigos/Build Windows")]
+    /// <summary>Windows x64 player in Builds/Windows/SuperCigo and Builds/SuperCigo-Windows.zip (the folder inside the zip).</summary>
+    [MenuItem("SuperCigo/Build Windows")]
     public static void BuildWindows()
     {
         EnsureMaterials();ConfigurePlayer();
-        const string folder="Builds/Windows/SuperCigos",exe=folder+"/SuperCigos.exe",zip="Builds/SuperCigos-Windows.zip";
+        const string folder="Builds/Windows/SuperCigo",exe=folder+"/SuperCigo.exe",zip="Builds/SuperCigo-Windows.zip";
         if(Directory.Exists(folder))Directory.Delete(folder,true);
         Build(exe,BuildTarget.StandaloneWindows64);
         foreach(string junk in Directory.GetDirectories(folder,"*DontShip*"))Directory.Delete(junk,true);
         foreach(string junk in Directory.GetDirectories(folder,"*DoNotShip*"))Directory.Delete(junk,true);
         // PE header: "MZ", then "PE\0\0" at e_lfanew followed by the machine type 0x8664 (x86-64).
         var bytes=File.ReadAllBytes(exe);int pe=System.BitConverter.ToInt32(bytes,0x3C);
-        if(bytes[0]!='M'||bytes[1]!='Z'||bytes[pe]!='P'||bytes[pe+1]!='E'||System.BitConverter.ToUInt16(bytes,pe+4)!=0x8664)throw new System.Exception("SuperCigos.exe is not an x86-64 PE");
+        if(bytes[0]!='M'||bytes[1]!='Z'||bytes[pe]!='P'||bytes[pe+1]!='E'||System.BitConverter.ToUInt16(bytes,pe+4)!=0x8664)throw new System.Exception("SuperCigo.exe is not an x86-64 PE");
         if(File.Exists(zip))File.Delete(zip);
         ZipFile.CreateFromDirectory(folder,zip,System.IO.Compression.CompressionLevel.Optimal,true);
         Debug.Log("RAILWAY_WINDOWS_BUILD_OK zip="+new FileInfo(zip).Length);
     }
     /// <summary>Both platforms plus Builds/SHA256SUMS.txt for the release page.</summary>
-    [MenuItem("SuperCigos/Build release")]
+    [MenuItem("SuperCigo/Build release")]
     public static void BuildRelease()
     {
         BuildMac();BuildWindows();
         var sums=new System.Text.StringBuilder();
-        foreach(string zip in new[]{"Builds/SuperCigos-macOS.zip","Builds/SuperCigos-Windows.zip"})
+        foreach(string zip in new[]{"Builds/SuperCigo-macOS.zip","Builds/SuperCigo-Windows.zip"})
             using(var sha=System.Security.Cryptography.SHA256.Create())using(var stream=File.OpenRead(zip))
                 sums.Append(System.BitConverter.ToString(sha.ComputeHash(stream)).Replace("-","").ToLowerInvariant()).Append("  ").Append(Path.GetFileName(zip)).Append('\n');
         File.WriteAllText("Builds/SHA256SUMS.txt",sums.ToString());

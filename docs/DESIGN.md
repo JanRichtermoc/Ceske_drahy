@@ -1,4 +1,4 @@
-# SuperCigos – design
+# SuperCigo – design
 
 ## Koncept
 CJ chce stihnout poslední spoj a projíždí deset skutečných železničních stanic Olomouce. Každá trať je 2,5D plošinovka po střechách vagonů. Kamera se dívá z boku a jen mírně shora. Hra je arkádová a humorná: přehnané nádražní hlášení, holubi, revizoři s brašnou, podchodoví „alchymisté“ s obřími injekcemi, kufry jako katapult a tvarůžkové turbo.

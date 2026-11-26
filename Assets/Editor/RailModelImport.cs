@@ -93,7 +93,7 @@ public sealed class RailModelImport : AssetPostprocessor
     /// The body clips must not drive the face: removes the auto-mapped Jaw and Eye bones from every character avatar.
     /// The mapping is stored in the model's .meta, so this only needs to run again after replacing a model.
     /// </summary>
-    [MenuItem("SuperCigos/Configure character avatars")]
+    [MenuItem("SuperCigo/Configure character avatars")]
     public static void ConfigureAvatars()
     {
         foreach (string path in AssetDatabase.FindAssets("t:Model", new[] { Characters.TrimEnd('/') }).Select(AssetDatabase.GUIDToAssetPath))
@@ -108,7 +108,7 @@ public sealed class RailModelImport : AssetPostprocessor
     }
 
     /// <summary>The clip list needs the takes, which exist only after a first import: menu to (re)apply it.</summary>
-    [MenuItem("SuperCigos/Configure animation clips")]
+    [MenuItem("SuperCigo/Configure animation clips")]
     public static void ConfigureClips()
     {
         foreach (string path in AssetDatabase.FindAssets("t:Model", new[] { Ual.TrimEnd('/') }).Select(AssetDatabase.GUIDToAssetPath))

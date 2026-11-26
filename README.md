@@ -1,12 +1,12 @@
-# SuperCigos
+# SuperCigo
 
-**[⬇ Windows (ZIP)](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/SuperCigos-Windows.zip)** · **[⬇ macOS – Apple silicon i Intel (ZIP)](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/SuperCigos-macOS.zip)** · [všechna vydání](https://github.com/JanRichtermoc/Ceske_drahy/releases)
+**[⬇ Windows (ZIP)](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/SuperCigo-Windows.zip)** · **[⬇ macOS – Apple silicon i Intel (ZIP)](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/SuperCigo-macOS.zip)** · [všechna vydání](https://github.com/JanRichtermoc/Ceske_drahy/releases)
 
 ![Hlavní menu – odjezdová tabule](docs/menu.png)
 
 ## Popis hry
 
-*SuperCigos* je 2,5D arkádová plošinovka pro jednoho hráče. Carl „CJ“ Johnson se snaží stihnout poslední spoj. Cestou proskáče **deset skutečných železničních stanic Olomouce** po střechách vagonů, cisteren a kontejnerů. Pod nohama mu přitom překážejí revizoři s brašnami, holubi, pára a podchodoví alchymisté s obřími injekcemi.
+*SuperCigo* je 2,5D arkádová plošinovka pro jednoho hráče. Carl „CJ“ Johnson se snaží stihnout poslední spoj. Cestou proskáče **deset skutečných železničních stanic Olomouce** po střechách vagonů, cisteren a kontejnerů. Pod nohama mu přitom překážejí revizoři s brašnami, holubi, pára a podchodoví alchymisté s obřími injekcemi.
 
 **Cíl:** projet každou trať od startovního nástupiště do cíle co nejrychleji. Po dojetí se ukáže **jízdenka s časem** a osobním rekordem trati (razítko „NOVÝ REKORD“), dále body, sebrané jízdenky, odrazy a nejvyšší kombo. Rekordy se ukládají lokálně a zobrazují se v menu na odjezdové tabuli.
 
@@ -63,21 +63,24 @@ Hra se ovládá klávesnicí; v menu jde použít i myš. Funguje také herní o
 ## Postup spuštění
 
 ### Windows
-1. Stáhni **[SuperCigos-Windows.zip](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/SuperCigos-Windows.zip)**.
+
+> **Upozornění:** Windows verze byla testována jen ve virtuálu na Macu (Parallels Desktop, Windows 11 pro ARM), ne na skutečném počítači s Windows. Na reálném Windows proto nemusí fungovat nejlépe: možné jsou chyby grafiky nebo nižší výkon, které se ve virtuálu neprojevily. Co se ověřilo, je v [docs/VALIDATION.md](docs/VALIDATION.md#windows-ve-virtuálu-parallels-desktop-na-macu).
+
+1. Stáhni **[SuperCigo-Windows.zip](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/SuperCigo-Windows.zip)**.
 2. Klikni na ZIP pravým tlačítkem a zvol **Extrahovat vše…**. Hra nejde spustit přímo z neotevřeného ZIPu.
-3. Ve složce `SuperCigos` spusť **`SuperCigos.exe`**. Celá složka musí zůstat pohromadě: `UnityPlayer.dll`, `SuperCigos_Data` a `MonoBleedingEdge` leží vedle exe.
+3. Ve složce `SuperCigo` spusť **`SuperCigo.exe`**. Celá složka musí zůstat pohromadě: `UnityPlayer.dll`, `SuperCigo_Data` a `MonoBleedingEdge` leží vedle exe.
 4. Build není podepsaný, takže Windows SmartScreen může ukázat „Systém Windows ochránil váš počítač“. Klikni na **Další informace → Přesto spustit**.
 
 Požadavky: Windows 10 nebo 11 (64 bit), grafická karta s DirectX 11, asi 250 MB volného místa. Instalace ani internet nejsou potřeba.
 
 ### macOS (Apple silicon i Intel)
-1. Stáhni **[SuperCigos-macOS.zip](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/SuperCigos-macOS.zip)** a rozbal ho dvojklikem. Aplikaci `SuperCigos.app` můžeš přesunout do složky Aplikace.
+1. Stáhni **[SuperCigo-macOS.zip](https://github.com/JanRichtermoc/Ceske_drahy/releases/latest/download/SuperCigo-macOS.zip)** a rozbal ho dvojklikem. Aplikaci `SuperCigo.app` můžeš přesunout do složky Aplikace.
 2. Aplikace je podepsaná jen lokálně (ad hoc), ne certifikátem Apple Developer, takže ji macOS při prvním spuštění zablokuje:
-   - **macOS 15 a novější:** otevři aplikaci, v hlášce „Apple nemohl ověřit…“ klikni na **Hotovo**. Pak otevři **Nastavení systému → Soukromí a zabezpečení**, dole u „Aplikace SuperCigos byla zablokována“ klikni na **Přesto otevřít** a potvrď heslem.
+   - **macOS 15 a novější:** otevři aplikaci, v hlášce „Apple nemohl ověřit…“ klikni na **Hotovo**. Pak otevři **Nastavení systému → Soukromí a zabezpečení**, dole u „Aplikace SuperCigo byla zablokována“ klikni na **Přesto otevřít** a potvrď heslem.
    - **macOS 13–14:** klikni na aplikaci pravým tlačítkem, zvol **Otevřít** a v dialogu znovu **Otevřít**.
 3. Pokud macOS hlásí, že je aplikace **„poškozená“**, odstraň karanténní příznak v Terminálu (uprav cestu podle toho, kde aplikace je):
    ```sh
-   xattr -dr com.apple.quarantine ~/Downloads/SuperCigos.app
+   xattr -dr com.apple.quarantine ~/Downloads/SuperCigo.app
    ```
 
 Požadavky: macOS 12 nebo novější, Mac s Apple silicon nebo Intel (universal aplikace).
@@ -86,7 +89,7 @@ Požadavky: macOS 12 nebo novější, Mac s Apple silicon nebo Intel (universal 
 1. Naklonuj repozitář: `git clone https://github.com/JanRichtermoc/Ceske_drahy.git`.
 2. V Unity Hub zvol **Add → Add project from disk**, vyber složku a otevři ji v Unity **6000.6.8f1**. Při prvním otevření se importují balíčky a assety, což trvá několik minut.
 3. Otevři scénu `Assets/Scenes/OlomoucHlavniNadrazi.unity` a stiskni **Play**.
-4. Vlastní build: menu **SuperCigos → Build release** vytvoří `Builds/SuperCigos-macOS.zip` (universal, ad hoc podpis), `Builds/SuperCigos-Windows.zip` a `Builds/SHA256SUMS.txt`. Jednotlivě je spustí **Build macOS** a **Build Windows**. Windows build potřebuje v Unity Hub modul *Windows Build Support (Mono)*, macOS build modul *Mac Build Support (Mono)* a podpis běží jen na Macu.
+4. Vlastní build: menu **SuperCigo → Build release** vytvoří `Builds/SuperCigo-macOS.zip` (universal, ad hoc podpis), `Builds/SuperCigo-Windows.zip` a `Builds/SHA256SUMS.txt`. Jednotlivě je spustí **Build macOS** a **Build Windows**. Windows build potřebuje v Unity Hub modul *Windows Build Support (Mono)*, macOS build modul *Mac Build Support (Mono)* a podpis běží jen na Macu.
 
 ## Použité technologie
 
@@ -112,6 +115,7 @@ Požadavky: macOS 12 nebo novější, Mac s Apple silicon nebo Intel (universal 
   - `RailSmokeTestRunner` (1): sám vstoupí do Play Mode a spustí integrační kontroly.
 - **Integrační kontroly** (`RailSmokeTests.Run()`, 40 kontrol) běží proti skutečnému pohybu: dopad, zranění a nezranitelnost, prohra, pád a checkpoint, hranice světa, variabilní skok, coyote time, buffer skoku, omezení pádu a rychlý pád, korekce hrany, holub, mířená brašna revizora, vezení na vagonu (i s jízdenkami), kufr, dvojskok, odraz od protivníka, úhyb, nákaza a lékárnička, pára, uložení rekordu, postup kampaní a úklid při návratu do menu. Skriptovaný běžec projede všech 10 tratí a ověří, že vozy sedí na svých plošinách. Testy po sobě obnoví hráčovy rekordy.
 - **Ruční testovací scénář a protokol**: [docs/TESTOVANI.md](docs/TESTOVANI.md).
+- **Windows jen ve virtuálu:** Windows build se testoval v Parallels Desktop na Macu, ne na skutečném počítači s Windows ([protokol](docs/TESTOVANI.md#protokol-windows-ve-virtuálu)).
 
 Z příkazové řádky (Unity v dávkovém režimu, výsledky v NUnit XML):
 
@@ -185,4 +189,4 @@ SKETCHFAB_API_TOKEN=... python3 Tools/sketchfab_download.py a539732c028d43b7be32
 Blender -b --factory-startup -P Tools/blender/character_prep.py -- --profile cj --source .local/cj/scene.gltf --out .local/work/cj
 ```
 
-**Upozornění:** CJ je postava ze hry Grand Theft Auto: San Andreas od Rockstar Games. SuperCigos je nekomerční fanouškovský školní projekt. Model CJ je fanouškovský model ze Sketchfabu (CC BY 4.0, autor Zorg_Sinister); hra nepoužívá žádné soubory z her GTA. Hra není oficiálním produktem Rockstar Games ani Českých drah; názvy stanic a barvy vozů slouží jen jako kulisa.
+**Upozornění:** CJ je postava ze hry Grand Theft Auto: San Andreas od Rockstar Games. SuperCigo je nekomerční fanouškovský školní projekt. Model CJ je fanouškovský model ze Sketchfabu (CC BY 4.0, autor Zorg_Sinister); hra nepoužívá žádné soubory z her GTA. Hra není oficiálním produktem Rockstar Games ani Českých drah; názvy stanic a barvy vozů slouží jen jako kulisa.

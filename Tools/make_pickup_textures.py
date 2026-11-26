@@ -39,7 +39,7 @@ def ticket():
         d.rectangle((x, 430, x + bar, 590), fill=(25, 25, 30))
         x += bar + random.choice((5, 7, 10))
     d.rectangle((700, 420, 970, 600), outline=(0, 82, 158), width=6)
-    d.text((725, 470), "SuperCigos", font=font("BarlowCondensed-Bold.ttf", 54), fill=(0, 82, 158))
+    d.text((725, 470), "SuperCigo", font=font("BarlowCondensed-Bold.ttf", 54), fill=(0, 82, 158))
     d.rectangle((0, 0, w - 1, h - 1), outline=(200, 196, 186), width=8)
     im.save(OUT / "Ticket.png")
 

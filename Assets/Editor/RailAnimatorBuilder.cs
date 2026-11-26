@@ -7,7 +7,7 @@ using UnityEngine;
 /// <summary>
 /// Builds the animator controllers in Resources/Animation from the UAL clips. The game drives the states itself
 /// (cross-fades from CjRig/RailActor), so the controllers hold states and one locomotion blend tree, no transitions.
-/// Run "SuperCigos/Build animators" when the clip set changes; the output is committed.
+/// Run "SuperCigo/Build animators" when the clip set changes; the output is committed.
 /// </summary>
 public static class RailAnimatorBuilder
 {
@@ -16,9 +16,9 @@ public static class RailAnimatorBuilder
 
     static AnimationClip Clip(string name) =>
         AssetDatabase.LoadAllAssetsAtPath(Ual).OfType<AnimationClip>().FirstOrDefault(c => c.name == name)
-        ?? throw new System.InvalidOperationException("Missing UAL clip " + name + ". Run SuperCigos/Configure animation clips.");
+        ?? throw new System.InvalidOperationException("Missing UAL clip " + name + ". Run SuperCigo/Configure animation clips.");
 
-    [MenuItem("SuperCigos/Build animators")]
+    [MenuItem("SuperCigo/Build animators")]
     public static void Build()
     {
         System.IO.Directory.CreateDirectory(Folder);

@@ -1,18 +1,20 @@
 # Ruční testovací scénář
 
-Projdi na sestaveném buildu (Windows `SuperCigos.exe` nebo macOS aplikace) v okně 1280×720 i na celé obrazovce. U každého kroku zapiš OK nebo popis chyby do protokolu na konci.
+Projdi na sestaveném buildu (Windows `SuperCigo.exe` nebo macOS aplikace) v okně 1280×720 i na celé obrazovce. U každého kroku zapiš OK nebo popis chyby do protokolu na konci.
+
+> **Kde se testovalo:** macOS build přímo na Macu s Apple M4. **Windows build jen ve virtuálu na Macu** (Parallels Desktop, Windows 11 pro ARM, hra v emulaci x64), protože tým nemá počítač s Windows. Výsledek je v [protokolu Windows ve virtuálu](#protokol-windows-ve-virtuálu) a podrobnosti v [VALIDATION.md](VALIDATION.md#windows-ve-virtuálu-parallels-desktop-na-macu). Na skutečném počítači s Windows hra zatím otestovaná není.
 
 ## 0. Instalace (stažení z GitHub Releases jako běžný uživatel)
 | # | Krok | Očekávaný výsledek |
 |---|---|---|
-| 0.1 | Windows: stáhni `SuperCigos-Windows.zip` z README, **Extrahovat vše…**, spusť `SuperCigos\SuperCigos.exe`. Pokud se objeví SmartScreen, zvol **Další informace → Přesto spustit**. | Hra se spustí v okně 1280×720 s ikonou SC, bez úvodního loga Unity. |
-| 0.2 | macOS (jiný Mac než ten, na kterém vznikl build): stáhni `SuperCigos-macOS.zip` přes Safari, rozbal dvojklikem a spusť. Postupuj podle README (macOS 15: Nastavení systému → Soukromí a zabezpečení → **Přesto otevřít**). | Po povolení se hra spustí a při dalším spuštění se už neptá. Na Macu s Intelem i s Apple silicon. |
+| 0.1 | Windows: stáhni `SuperCigo-Windows.zip` z README, **Extrahovat vše…**, spusť `SuperCigo\SuperCigo.exe`. Pokud se objeví SmartScreen, zvol **Další informace → Přesto spustit**. | Hra se spustí v okně 1280×720 s ikonou SC, bez úvodního loga Unity. |
+| 0.2 | macOS (jiný Mac než ten, na kterém vznikl build): stáhni `SuperCigo-macOS.zip` přes Safari, rozbal dvojklikem a spusť. Postupuj podle README (macOS 15: Nastavení systému → Soukromí a zabezpečení → **Přesto otevřít**). | Po povolení se hra spustí a při dalším spuštění se už neptá. Na Macu s Intelem i s Apple silicon. |
 | 0.3 | Ukonči hru a spusť ji znovu. | Nastavení a rekordy zůstaly. |
 
 ## 1. Spuštění a menu
 | # | Krok | Očekávaný výsledek |
 |---|---|---|
-| 1.1 | Spusť hru. | Otevře se okno s hlavním menu: vlevo nápis SUPERCIGOS, vpravo tabule ODJEZDY s 10 tratěmi a nahoře hodiny se systémovým časem. |
+| 1.1 | Spusť hru. | Otevře se okno s hlavním menu: vlevo nápis SUPERCIGO, vpravo tabule ODJEZDY s 10 tratěmi a nahoře hodiny se systémovým časem. |
 | 1.2 | Šipkami ↑/↓ (nebo W/S) projdi tabuli. | Zvýrazněný řádek se posouvá a karta vlevo ukazuje název, popis, obtížnost a rekord vybrané trati. Z první trati jde šipka ↑ na poslední. |
 | 1.3 | Najeď myší na řádek. | Řádek se zvýrazní. |
 | 1.4 | Klikni na NASTAVENÍ, pak na HOTOVO. | Otevře a zavře se nastavení. Klik na HOTOVO nespustí žádnou trať. |
@@ -75,7 +77,7 @@ Vyplň jeden protokol za každé testované zařízení. Chyby popiš tak, aby �
 |---|---|
 | Tester | |
 | Datum | |
-| Build (verze a soubor) | SuperCigos 1.1.0, `SuperCigos-…zip` |
+| Build (verze a soubor) | SuperCigo 1.1.0, `SuperCigo-…zip` |
 | Operační systém a verze | |
 | Procesor / grafická karta | |
 | Rozlišení a režim (okno / celá obrazovka) | |
@@ -90,3 +92,27 @@ Vyplň jeden protokol za každé testované zařízení. Chyby popiš tak, aby �
 | 5. Nastavení | | |
 | 6. Herní ovladač | | |
 | FPS v pravém dolním rohu HUD (typická hodnota) | | |
+
+## Protokol: Windows ve virtuálu
+
+Testy proběhly ve virtuálním stroji na Macu, ne na skutečném počítači s Windows. Hru ovládal Claude Code (AI asistent) z Macu přes `prlctl exec` na pokyn Jana Richtermoce; snímky obrazovky se porovnávaly s macOS buildem.
+
+| Položka | Hodnota |
+|---|---|
+| Tester | Claude Code pro Jana Richtermoce |
+| Datum | 26. 11. 2026 |
+| Build (verze a soubor) | 1.1.0 z vydání v1.1.0 (`SuperCigos-Windows.zip`, ještě pod původním názvem) a opravený build ze stejného kódu s `RailWorld.GpuInstancing` |
+| Operační systém a verze | Windows 11 pro ARM v Parallels Desktop 26.4, hostitel macOS 27 na Macu s Apple M4 |
+| Procesor / grafická karta | 4 virtuální jádra; Parallels Display Adapter (WDDM), Direct3D 11 feature level 11.1, hlášeno 128 MB grafické paměti |
+| Rozlišení a režim (okno / celá obrazovka) | okno maximalizované přes celý virtuál, 3420 × 2070 |
+
+| Oddíl | Výsledek (OK / chyba) | Poznámka |
+|---|---|---|
+| 0. Instalace | částečně OK | Rozbalený ZIP se spustí. Stažení přes prohlížeč a SmartScreen neověřeny. |
+| 1. Spuštění a menu | 1.1 OK | Menu, tabule ODJEZDY a hodiny se zobrazí. Kroky 1.2–1.6 neprovedeny. |
+| 2. Hraní trati | 2.1 chyba → opraveno | Na trati 1 chyběly budova s okny, vagony v pozadí, sloupy a většina jízdenek (ovladač Parallels nevykreslí GPU instancing). Po opravě obraz odpovídá macOS. Kroky 2.2–2.11 neprovedeny. |
+| 3. Cíl a rekord | neprovedeno | |
+| 4. Tratě (1–10) | jen trať 1 | |
+| 5. Nastavení | 5.2 částečně OK | Hra začne na *Grafika · Úsporná* (128 MB paměti). *Vysoká* (přepnutá v uložených preferencích, ne v menu) zapne stíny a post-processing. Ostatní kroky neprovedeny. |
+| 6. Herní ovladač | neprovedeno | |
+| FPS v pravém dolním rohu HUD (typická hodnota) | 55 / 41–43 | Úsporná / Vysoká grafika, trať 1 |

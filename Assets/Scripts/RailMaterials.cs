@@ -92,7 +92,7 @@ namespace CeskeDrahy
             string key = folder + part + brightness;
             if (cache.TryGetValue(key, out var existing) && existing) return existing;
             var template = Resources.Load<Material>(Cutout(part) ? "SurfaceCutout" : "Surface");
-            var material = new Material(template) { name = "Character " + part, enableInstancing = true, color = Color.white };
+            var material = new Material(template) { name = "Character " + part, enableInstancing = RailWorld.GpuInstancing, color = Color.white };
             var albedo = Resources.Load<Texture2D>(folder + part + "_A");
             var normal = Resources.Load<Texture2D>(folder + part + "_N");
             var orm = Resources.Load<Texture2D>(folder + part + "_ORM");

@@ -1,4 +1,4 @@
-# Zvuk hry SuperCigos
+# Zvuk hry SuperCigo
 
 Všechny uvedené nahrávky z Freesound jsou pod CC0. Pro hru jsou sestříhané, převedené na mono a hlasitostně upravené. Smyčky nádraží a kolejí mají prolínání na spoji.
 

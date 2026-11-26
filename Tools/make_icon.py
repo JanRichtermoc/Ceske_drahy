@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Draws the application icon (Assets/Art/Icon/SuperCigos_1024.png): ČD blue tile, amber platform stripe and the
+"""Draws the application icon (Assets/Art/Icon/SuperCigo_1024.png): ČD blue tile, amber platform stripe and the
 SC monogram in the game's Barlow Condensed. Run: python3 Tools/make_icon.py"""
 from pathlib import Path
 
@@ -30,7 +30,7 @@ def main():
     ImageDraw.Draw(shadow).text((S / 2 + 10, 400 + 18), "SC", font=font, fill=(0, 0, 0, 150), anchor="mm")
     tile.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(14)))
     ImageDraw.Draw(tile).text((S / 2, 400), "SC", font=font, fill=(250, 248, 240, 255), anchor="mm")
-    out = ROOT / "Assets/Art/Icon/SuperCigos_1024.png"
+    out = ROOT / "Assets/Art/Icon/SuperCigo_1024.png"
     tile.save(out)
     print("ICON", out)
 

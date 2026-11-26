@@ -36,7 +36,7 @@ SETS = {
     "Planks": "weathered_planks",
     "SiloConcrete": "concrete_panels",
 }
-HEADERS = {"User-Agent": "SuperCigos-texture-fetch"}
+HEADERS = {"User-Agent": "SuperCigo-texture-fetch"}
 CONTEXT = ssl.create_default_context(cafile="/etc/ssl/cert.pem" if Path("/etc/ssl/cert.pem").exists() else None)
 
 

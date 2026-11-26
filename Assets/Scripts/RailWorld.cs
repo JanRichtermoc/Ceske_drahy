@@ -161,13 +161,29 @@ namespace CeskeDrahy
         public Material navy, blue, cream, steel, dark, gold, skin, rust, glass, green;
         readonly Dictionary<string, Material> mats = new Dictionary<string, Material>();
 
+        /// <summary>
+        /// GPU instancing for the game's materials. Off only in the Windows player on the Parallels GPU (Windows on a Mac):
+        /// its driver drops instanced draws, so repeated walls, props and pickups vanished there. macOS always instances.
+        /// </summary>
+        public static bool GpuInstancing
+        {
+            get
+            {
+#if UNITY_STANDALONE_WIN
+                return !SystemInfo.graphicsDeviceName.Contains("Parallels");
+#else
+                return true;
+#endif
+            }
+        }
+
         public Material Mat(string name, string hex, float metal = 0, float smooth = .25f)
         {
             if (mats.TryGetValue(name, out var existing)) return existing;
             ColorUtility.TryParseHtmlString(hex, out var color);
             var template=Resources.Load<Material>("Surface");
-            if(!template)throw new System.InvalidOperationException("Missing Surface material. Run SuperCigos / Prepare game scene.");
-            var m = new Material(template) { name = name, color = color, enableInstancing = true };
+            if(!template)throw new System.InvalidOperationException("Missing Surface material. Run SuperCigo / Prepare game scene.");
+            var m = new Material(template) { name = name, color = color, enableInstancing = GpuInstancing };
             m.SetFloat("_Metallic", metal); m.SetFloat("_Glossiness", smooth); mats[name] = m;
             return m;
         }
@@ -176,7 +192,7 @@ namespace CeskeDrahy
             if(mats.TryGetValue(name,out var existing))return existing;
             ColorUtility.TryParseHtmlString(hex,out var color);
             var source=Resources.Load<Material>(template);
-            var m=source?new Material(source){name=name,color=color,enableInstancing=true}:Mat(name+" fallback",hex);
+            var m=source?new Material(source){name=name,color=color,enableInstancing=GpuInstancing}:Mat(name+" fallback",hex);
             mats[name]=m;return m;
         }
         /// <summary>Wind-swayed tree crown material.</summary>

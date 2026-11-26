@@ -186,7 +186,7 @@ namespace CeskeDrahy
             TopBar();
             var level = RailLevel.All[game.selectedLevel];
             Label(R(64, 118, 600, 30), "POSLEDNÍ SPOJ  ·  OLOMOUC", condBold, 22, Amber);
-            Label(R(58, 146, 640, 128), "SUPERCIGOS", condBlack, 118, Enamel, TextAnchor.MiddleLeft, true);
+            Label(R(58, 146, 640, 128), "SUPERCIGO", condBlack, 118, Enamel, TextAnchor.MiddleLeft, true);
             Fill(R(64, 282, 96, 7), Amber, 3);
             Label(R(64, 298, 600, 46), "PLOŠINOVKA PO STŘECHÁCH", condBold, 40, Enamel);
             text.wordWrap = true;
@@ -217,7 +217,7 @@ namespace CeskeDrahy
             var badge = R(40, 16, 64, 40, X.Left, Y.Top);
             Fill(badge, Blue, 10);
             Label(badge, "SC", condBlack, 28, Enamel, TextAnchor.MiddleCenter);
-            Label(R(120, 16, 700, 40, X.Left, Y.Top), "SUPERCIGOS  /  NEZÁVISLÁ PLOŠINOVKA", condBold, 22, Enamel);
+            Label(R(120, 16, 700, 40, X.Left, Y.Top), "SUPERCIGO  /  NEZÁVISLÁ PLOŠINOVKA", condBold, 22, Enamel);
             ClockIcon(R(1462, 22, 28, 28, X.Right, Y.Top));
             Label(R(1498, 16, 80, 40, X.Right, Y.Top), clock, condBold, 30, Enamel);
         }
