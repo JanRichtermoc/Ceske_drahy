@@ -1,5 +1,6 @@
 DENÍK SELHÁNÍ AI A RETROSPEKTIVA
 Projekt: České dráhy
+AI: Codex
 
 Záznam vychází z průběhu vývoje hry v Unity do verze 0.3.0. Opravy kódu a testy prováděla AI na základě mého zadání. Moje role spočívala v zadávání požadavků a upřesňování výsledku.
 
