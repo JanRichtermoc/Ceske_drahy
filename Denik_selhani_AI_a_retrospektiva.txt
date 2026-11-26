@@ -1,14 +1,11 @@
 DENÍK SELHÁNÍ AI A RETROSPEKTIVA
-Projekt: České dráhy – Olomoucký chaos
+Projekt: České dráhy
 
 Záznam vychází z průběhu vývoje hry v Unity do verze 0.3.0. Opravy kódu a testy prováděla AI na základě mého zadání. Moje role spočívala v zadávání požadavků a upřesňování výsledku.
 
 DENÍK SELHÁNÍ AI
 
 1. Hra fungovala v editoru, ale samostatná aplikace se nespustila správně
-
-Co jsem chtěl:
-Chtěl jsem hru, kterou spustím na Macu i bez otevřeného Unity.
 
 Co AI udělala špatně:
 AI vytvářela materiály pomocí shaderu Standard načítaného až za běhu. Nezajistila, aby ho Unity zahrnulo do sestavené aplikace. V editoru proto hra fungovala, ale samostatná verze skončila chybou při vytváření materiálu.
