@@ -77,7 +77,7 @@ Vyplň jeden protokol za každé testované zařízení. Chyby popiš tak, aby �
 |---|---|
 | Tester | |
 | Datum | |
-| Build (verze a soubor) | SuperCigo 1.1.0, `SuperCigo-…zip` |
+| Build (verze a soubor) | SuperCigo 1.1.1, `SuperCigo-…zip` |
 | Operační systém a verze | |
 | Procesor / grafická karta | |
 | Rozlišení a režim (okno / celá obrazovka) | |
@@ -101,7 +101,7 @@ Testy proběhly ve virtuálním stroji na Macu, ne na skutečném počítači s 
 |---|---|
 | Tester | Claude Code pro Jana Richtermoce |
 | Datum | 26. 11. 2026 |
-| Build (verze a soubor) | 1.1.0 z vydání v1.1.0 (`SuperCigos-Windows.zip`, ještě pod původním názvem) a opravený build ze stejného kódu s `RailWorld.GpuInstancing` |
+| Build (verze a soubor) | 1.1.0 z vydání v1.1.0 (`SuperCigos-Windows.zip`, ještě pod původním názvem), opravený build ze stejného kódu s `RailWorld.GpuInstancing` a výsledné vydání 1.1.1 (`SuperCigo-Windows.zip`) |
 | Operační systém a verze | Windows 11 pro ARM v Parallels Desktop 26.4, hostitel macOS 27 na Macu s Apple M4 |
 | Procesor / grafická karta | 4 virtuální jádra; Parallels Display Adapter (WDDM), Direct3D 11 feature level 11.1, hlášeno 128 MB grafické paměti |
 | Rozlišení a režim (okno / celá obrazovka) | okno maximalizované přes celý virtuál, 3420 × 2070 |
@@ -110,9 +110,9 @@ Testy proběhly ve virtuálním stroji na Macu, ne na skutečném počítači s 
 |---|---|---|
 | 0. Instalace | částečně OK | Rozbalený ZIP se spustí. Stažení přes prohlížeč a SmartScreen neověřeny. |
 | 1. Spuštění a menu | 1.1 OK | Menu, tabule ODJEZDY a hodiny se zobrazí. Kroky 1.2–1.6 neprovedeny. |
-| 2. Hraní trati | 2.1 chyba → opraveno | Na trati 1 chyběly budova s okny, vagony v pozadí, sloupy a většina jízdenek (ovladač Parallels nevykreslí GPU instancing). Po opravě obraz odpovídá macOS. Kroky 2.2–2.11 neprovedeny. |
+| 2. Hraní trati | 2.1 chyba → opraveno | Ve verzi 1.1.0 chyběly na trati 1 budova s okny, vagony v pozadí, sloupy a většina jízdenek (ovladač Parallels nevykreslí GPU instancing). V opraveném buildu i ve vydání 1.1.1 obraz odpovídá macOS. Kroky 2.2–2.11 neprovedeny. |
 | 3. Cíl a rekord | neprovedeno | |
 | 4. Tratě (1–10) | jen trať 1 | |
 | 5. Nastavení | 5.2 částečně OK | Hra začne na *Grafika · Úsporná* (128 MB paměti). *Vysoká* (přepnutá v uložených preferencích, ne v menu) zapne stíny a post-processing. Ostatní kroky neprovedeny. |
 | 6. Herní ovladač | neprovedeno | |
-| FPS v pravém dolním rohu HUD (typická hodnota) | 55 / 41–43 | Úsporná / Vysoká grafika, trať 1 |
+| FPS v pravém dolním rohu HUD (typická hodnota) | 55–60 / 41–43 | Úsporná / Vysoká grafika, trať 1 |

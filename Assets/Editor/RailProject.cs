@@ -24,7 +24,7 @@ public static class RailProject
         // Texture import settings come from RailAssetRules (AssetPostprocessor).
         AssetDatabase.SaveAssets();Debug.Log("RAILWAY_SCENE_READY");
     }
-    public const string Version="1.1.0";
+    public const string Version="1.1.1";
     const string Scene="Assets/Scenes/OlomoucHlavniNadrazi.unity";
     /// <summary>Player settings shared by every platform build.</summary>
     public static void ConfigurePlayer()

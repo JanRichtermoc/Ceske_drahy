@@ -1,13 +1,14 @@
 # Ověření hry SuperCigo 1.1
 
-Projekt se otevřel, otestoval a sestavil v Unity 6000.6.8f1 přes Unity CLI / MCP Pipeline (`~/.unity/bin/unity cmd …`) na Macu s Apple M4 (16 GB, macOS 27). Výsledky platí pro commit, ze kterého vznikly soubory `SuperCigo-macOS.zip` a `SuperCigo-Windows.zip` verze 1.1.0 (ve vydání v1.1.0 ještě pod původním názvem hry *SuperCigos*).
+Projekt se otevřel, otestoval a sestavil v Unity 6000.6.8f1 přes Unity CLI / MCP Pipeline (`~/.unity/bin/unity cmd …`) na Macu s Apple M4 (16 GB, macOS 27). Výsledky platí pro verzi **1.1.1** (soubory `SuperCigo-macOS.zip` a `SuperCigo-Windows.zip` ve vydání v1.1.1). Verze 1.1.1 přináší nový název hry (dříve *SuperCigos*, vydání v1.1.0) a opravu vykreslování v Parallels; měření výkonu níže pochází z verze 1.1.0, herní kód pro macOS se od té doby nezměnil.
 
 ## Automatické testy
 - **EditMode: 72 / 72 zelených.** 62 kontrol dat a fyziky tratí, 9 kontrol importovaných postav a animací a 1 integrační test, který vstoupí do Play Mode.
 - **Integrační kontroly: 40 / 40** (`RailSmokeTests.Run()`). Skriptovaný běžec projede všech 10 tratí, ověří všechny plošiny, oba checkpointy, cíl, uložení rekordu a to, že vozy sedí na svých plošinách. Zranění, pára, injekce, projektily, prohra, rychlý pád, korekce hrany a další mechaniky se ověřují zvlášť.
 
 ## macOS build (`SuperCigo → Build release`)
-- Universal aplikace: všech 5 spustitelných souborů a knihoven obsahuje `x86_64` i `arm64` (kontrola `lipo -archs` při buildu). Minimální systém macOS 12.0, verze 1.1.0, ikona SC, bez úvodní obrazovky Unity.
+- Universal aplikace: všech 5 spustitelných souborů a knihoven obsahuje `x86_64` i `arm64` (kontrola `lipo -archs` při buildu). Minimální systém macOS 12.0, verze 1.1.1, ikona SC, bez úvodní obrazovky Unity.
+- Vydání 1.1.1 se po buildu spustilo z `Builds/macOS` s `-rail-benchmark … -rail-level 4`: trať Olomouc město se vykreslí celá a aplikace se sama ukončí s výsledky.
 - Podpis ad hoc (`codesign --force --deep --sign -`). `codesign --verify --deep --strict` projde v buildu i po rozbalení zipu přes `ditto` a přes `unzip`. `spctl --assess` podle očekávání hlásí *rejected*, protože aplikace není notarizovaná (projekt nemá Apple Developer ID). Postup pro hráče je v README.
 - Zip vytváří `ditto -c -k --norsrc --keepParent`: 99 MB, žádné položky `__MACOSX` ani `._`.
 - Simulovaná karanténa ze Safari (`com.apple.quarantine`): `spctl` aplikaci odmítne, po `xattr -dr com.apple.quarantine` zůstane podpis platný a aplikace se spustí.
@@ -25,8 +26,9 @@ Testy Windows buildu proběhly 26. 11. 2026 ve virtuálním stroji, protože tý
 - **Prostředí:** Parallels Desktop 26.4 na Macu s Apple M4 (macOS 27), Windows 11 pro ARM. Hra je x64, takže běží v emulaci. Grafika *Parallels Display Adapter (WDDM)* přes Direct3D 11 (feature level 11.1); ovladač hlásí jen 128 MB grafické paměti.
 - **Postup:** spuštění rozbaleného buildu, hlavní menu, start trati 1 a porovnání snímků obrazovky s macOS buildem na stejném místě trati. Hra se ovládala z Macu přes `prlctl exec` a snímky se pořizovaly uvnitř Windows.
 - **Nalezená chyba:** ovladač Parallels nevykreslí draw cally s GPU instancingem. Chyběly výpravní budova s okny, vagony v pozadí, sloupy přístřešku, obrubník nástupiště a většina jízdenek; místo nich byla vidět obloha. **Oprava:** `RailWorld.GpuInstancing` vypíná instancing jen ve Windows buildu na grafice Parallels. Na macOS a na běžném Windows PC se nic nemění. Po opravě odpovídá obraz macOS buildu.
+- **Vydání 1.1.1:** `SuperCigo-Windows.zip` se ve virtuálu rozbalil přes `Expand-Archive` a spustil. Okno nese název SuperCigo, trať 1 se vykreslí celá (budova s okny, vagony v pozadí, sloupy, všechny jízdenky).
 - **Grafická API:** vynucené Direct3D 12 (`-force-d3d12`) má v Parallels rozmazané textury, proto hra zůstává na Direct3D 11 (D3D12 sama odmítne kvůli feature level 11.1). OpenGL (`-force-glcore`) v buildu není.
-- **Výkon (trať 1, okno přes celou obrazovku virtuálu 3420 × 2070, údaj FPS z HUD):** kolem 55 FPS s *Grafika · Úsporná*, 41–43 FPS s *Grafika · Vysoká*. Kvůli 128 MB paměti začíná hra ve virtuálu na úsporné grafice.
+- **Výkon (trať 1, okno přes celou obrazovku virtuálu 3420 × 2070, údaj FPS z HUD):** 55–60 FPS s *Grafika · Úsporná*, 41–43 FPS s *Grafika · Vysoká*. Kvůli 128 MB paměti začíná hra ve virtuálu na úsporné grafice.
 - **Neověřeno:** běh na skutečném hardwaru s Windows (Intel/AMD/NVIDIA), stažení přes prohlížeč a SmartScreen, celý ruční scénář. Na reálném Windows se hra může chovat jinak než ve virtuálu.
 
 ## Výkon (samostatný přehrávač, Apple M4, 1600 × 900, grafika Ultra, bez omezení FPS)
