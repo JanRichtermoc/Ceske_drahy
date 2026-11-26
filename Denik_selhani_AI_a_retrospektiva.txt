@@ -1,0 +1,54 @@
+DENÍK SELHÁNÍ AI A RETROSPEKTIVA
+Projekt: České dráhy – Olomoucký chaos
+
+Záznam vychází z průběhu vývoje hry v Unity. Opravy kódu a testy prováděla AI na základě mého zadání. Moje role spočívala v zadávání požadavků a upřesňování výsledku.
+
+DENÍK SELHÁNÍ AI
+
+1. Hra fungovala v editoru, ale samostatná aplikace se nespustila správně
+
+Co jsem chtěl:
+Chtěl jsem hru, kterou spustím na Macu i bez otevřeného Unity.
+
+Co AI udělala špatně:
+AI vytvářela materiály pomocí shaderu Standard načítaného až za běhu. Nezajistila, aby ho Unity zahrnulo do sestavené aplikace. V editoru proto hra fungovala, ale samostatná verze skončila chybou při vytváření materiálu.
+
+Jak jsem to poznal:
+V průběhu testování samostatné aplikace se v protokolu objevila chyba ArgumentNullException u parametru shader. AI mi následně oznámila, že chyba se projevila až mimo editor.
+
+Jak jsem to opravil:
+S pomocí AI jsem nechal vytvořit materiály Surface a SurfaceNormal ve složce Resources. Jejich uložené odkazy zajistily zahrnutí shaderu do buildu. AI aplikaci znovu sestavila a ověřila její spuštění.
+
+2. Chybná úprava kódu při přidávání dalších úrovní
+
+Co jsem chtěl:
+Chtěl jsem více těžších tratí, lepší grafiku a propracovanější postavu.
+
+Co AI udělala špatně:
+Při automatické úpravě souboru RailWorld.cs vložila část nových metod také dovnitř třídy Platform. Metody se tam pokoušely používat data patřící okolní třídě. Projekt se kvůli tomu nezkompiloval.
+
+Jak jsem to poznal:
+Ve výpisu Unity se objevily chyby CS0120. Následný pokus o test hry navíc skončil chybou NullReferenceException. Z toho bylo vidět, že samotné zapsání změn ještě neznamená funkční výsledek.
+
+Jak jsem to opravil:
+S pomocí AI jsem nechal odstranit chybně vloženou část kódu a obnovit správnou strukturu tříd. Potom se ověřila kompilace a znovu proběhly herní testy. Výsledná sada prošla ve všech 20 kontrolách.
+
+3. Výsledek neodpovídal přesně požadavku na model CJ
+
+Co jsem chtěl:
+Chtěl jsem, aby hráč používal model CJ z GTA: San Andreas.
+
+Co AI udělala špatně:
+AI po hledání modelů zvolila vlastní stylizovaný fanouškovský model s bílým tílkem a džínami. Tuto změnu sice popsala, ale dodaný model tím nesplnil můj požadavek na původní model přesně.
+
+Jak jsem to poznal:
+Z popisu výsledku a herních náhledů bylo patrné, že jde o nově vytvořenou podobu postavy. AI výslovně uvedla, že vytvořila vlastní geometrii a animace.
+
+Jak jsem to opravil:
+Tento bod zatím nebyl plně opraven. Ve verzi 0.3.0 zůstal vlastní fanouškovský model. Pro další úpravu bych musel přesně určit konkrétní model a ověřit, že jej mohu použít a sdílet v repozitáři. Tento případ beru jako nesplněnou část zadání, nikoli jako hotovou opravu.
+
+KRÁTKÁ INDIVIDUÁLNÍ RETROSPEKTIVA
+
+Příště bych začal menším zadáním: jedna krátká trať, základní pohyb a funkční samostatná aplikace. Teprve po jejich ověření bych přidával další nepřátele, grafiku a úrovně. U postavy bych předem přesně určil, který model chci použít. Průběžně bych kontroloval také vzhled hry a soulad s původním zadáním.
+
+AI mi pomohla rychle vytvořit základ hry, ovládat Unity přes MCP, doplnit zvuky a připravit sestavení i testy. Překážela tím, že někdy provedla příliš rozsáhlou úpravu najednou nebo zvolila vlastní řešení, které se od mého požadavku lišilo. Zkušenost mi ukázala, že úspěšná kompilace a automatické testy jsou jen část kontroly. Musím také ověřit, zda výsledek skutečně odpovídá tomu, co jsem chtěl.
